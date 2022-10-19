@@ -1,26 +1,40 @@
 from typing import Optional
-from enum import Enum
 
-from app.models.core import IDModelMixin, CoreModel
+from pydantic import EmailStr, constr, validator
 
+from app.models.core import IDModelMixin, CoreModel, DateTimeModelMixin
+from app.models.token import AccessToken
 
 class UserBase(CoreModel):
     """
     All common characteristics of our User resource
     """
-    email: str
+    email: EmailStr
+    email_verified: bool = False
 
 
-class UserCreate(UserBase):
-    email: str
-    password: str
+class UserCreate(CoreModel):
+    """
+        Email and password are required for registering a new user
+    """
+    email: EmailStr
+    password: constr(min_length=8, max_length=64)
 
 
-class UserUpdate(UserBase):
-    email_verified: Optional[bool]
-    password: Optional[str]
+class UserPasswordUpdate(CoreModel):
+    """
+    Users can change their password
+    """
+    password: constr(min_length=8, max_length=64)
+    salt: str
 
+class UserInDB(IDModelMixin, DateTimeModelMixin, UserBase):
+    """
+    Add in id, created_at, updated_at, and user's password and salt
+    """
+    password: constr(min_length=8, max_length=64)
+    salt: str
 
-class UserInDB(IDModelMixin, UserBase):
-    email_verified: bool
+class UserPublic(IDModelMixin, DateTimeModelMixin, UserBase):
+    access_token: Optional[AccessToken]
 
