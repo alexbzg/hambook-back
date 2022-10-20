@@ -1,4 +1,4 @@
-from app.services.authentification import AuthService
+from app.services.authentication import AuthService
 
 auth_service = AuthService()
 

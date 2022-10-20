@@ -13,22 +13,33 @@ from alembic.config import Config
 
 from app.models.user import UserCreate, UserInDB
 from app.db.repositories.users import UsersRepository
+from app.core.config import SECRET_KEY, JWT_TOKEN_PREFIX
+from app.services import auth_service
 
 @pytest.fixture
-def test_user_password_plain() -> string:
+def test_user_password_plain() -> str:
     return "12345678"
 
 @pytest.fixture
-async def test_user(db: Database) -> UserInDB:
+async def test_user(db: Database, test_user_password_plain: str) -> UserInDB:
     new_user = UserCreate(
         email="aaa@bbb.cc",
-        password=test_user_password_plain()
+        password=test_user_password_plain
     )
     user_repo = UsersRepository(db)
     existing_user = await user_repo.get_user_by_email(email=new_user.email)
     if existing_user:
         return existing_user
     return await user_repo.register_new_user(new_user=new_user)
+
+@pytest.fixture
+def authorized_client(client: AsyncClient, test_user: UserInDB) -> AsyncClient:
+    access_token = auth_service.create_access_token_for_user(user=test_user, secret_key=str(SECRET_KEY))
+    client.headers = {
+        **client.headers,
+        "Authorization": f"{JWT_TOKEN_PREFIX} {access_token}",
+    }
+    return client
 
 # Apply migrations at beginning and end of testing session
 @pytest.fixture(scope="session")
