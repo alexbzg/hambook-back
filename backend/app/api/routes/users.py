@@ -9,8 +9,10 @@ from starlette.status import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 
+
 from app.api.dependencies.database import get_repository
-from app.models.user import UserCreate, UserPublic
+from app.api.dependencies.auth import get_current_active_user
+from app.models.user import UserCreate, UserInDB, UserPublic
 from app.models.token import AccessToken
 from app.services import auth_service
 
@@ -46,3 +48,9 @@ async def user_login_with_email_and_password(
     access_token = AccessToken(access_token=auth_service.create_access_token_for_user(user=user),
             token_type="bearer")
     return access_token
+
+@router.get("/me/", response_model=UserPublic, name="users:get-current-user")
+async def get_currently_authenticated_user(current_user: UserInDB = Depends(get_current_active_user)) -> UserPublic:
+    return current_user
+
+

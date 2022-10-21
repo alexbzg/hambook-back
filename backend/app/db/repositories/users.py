@@ -22,6 +22,11 @@ GET_USER_BY_EMAIL_QUERY = """
     WHERE email = :email;
 """
 
+GET_USER_BY_ID_QUERY = """
+    SELECT id, email, email_verified, password, salt, created_at, updated_at
+    FROM users
+    WHERE id = :id;
+"""
 
 class UsersRepository(BaseRepository):
     """"
@@ -34,6 +39,12 @@ class UsersRepository(BaseRepository):
 
     async def get_user_by_email(self, *, email: EmailStr) -> UserInDB:
         user_record = await self.db.fetch_one(query=GET_USER_BY_EMAIL_QUERY, values={"email": email})
+        if not user_record:
+            return None
+        return UserInDB(**user_record)
+
+    async def get_user_by_id(self, *, userid: int) -> UserInDB:
+        user_record = await self.db.fetch_one(query=GET_USER_BY_ID_QUERY, values={"id": userid})
         if not user_record:
             return None
         return UserInDB(**user_record)
