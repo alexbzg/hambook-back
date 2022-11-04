@@ -30,7 +30,7 @@ class UserPasswordUpdate(CoreModel):
 
 class UserInDB(IDModelMixin, DateTimeModelMixin, UserBase):
     """
-    Add in id, created_at, updated_at, and user's password and salt
+    Add in id, created_at, updated_at, user's password and salt
     """
     password: constr(min_length=8, max_length=64)
     salt: str

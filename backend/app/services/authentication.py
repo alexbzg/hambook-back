@@ -58,8 +58,6 @@ class AuthService:
             **jwt_meta.dict(),
             **jwt_creds.dict(),
         )
-        # NOTE - previous versions of pyjwt ("<2.0") returned the token as bytes insted of a string.
-        # That is no longer the case and the `.decode("utf-8")` has been removed.
         access_token = jwt.encode(token_payload.dict(), secret_key, algorithm=JWT_ALGORITHM)
         return access_token
 

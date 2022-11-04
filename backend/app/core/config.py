@@ -24,6 +24,14 @@ POSTGRES_SERVER = config("POSTGRES_SERVER", cast=str, default="db")
 POSTGRES_PORT = config("POSTGRES_PORT", cast=str, default="5432")
 POSTGRES_DB = config("POSTGRES_DB", cast=str)
 
+EMAIL_USER = config("EMAIL_USER", cast=str)
+EMAIL_PASSWORD = config("EMAIL_PASSWORD", cast=str)
+EMAIL_FROM = config("EMAIL_FROM", cast=str)
+EMAIL_PORT = config("EMAIL_PORT", cast=str)
+EMAIL_HOST = config("EMAIL_HOST", cast=str)
+
+
+
 DATABASE_URL = config(
   "DATABASE_URL",
   cast=DatabaseURL,
