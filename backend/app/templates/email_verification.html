@@ -1,0 +1,11 @@
+{% extends 'base.html' %} {% block content %}
+<p>Hello!</p>
+<p>
+  Thanks for creating an account with us. Please verify your email address by
+  clicking the link below. The link will be valid for 1 hour. If you didn't create 
+  Hambook.net account please ignore this message.
+</p>
+<a href="{{verify_url}}" target="_blank">Verify email address</a>
+
+Hambook.net support
+{% endblock content %}

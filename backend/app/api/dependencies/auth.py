@@ -17,6 +17,7 @@ async def get_user_from_token(
     *,
     token: str = Depends(oauth2_scheme),
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    token_type: str = 'bearer'
 ) -> Optional[UserInDB]:
     try:
         userid = auth_service.get_userid_from_token(token=token, secret_key=str(SECRET_KEY))
@@ -27,7 +28,9 @@ async def get_user_from_token(
     return user
 
 
-def get_current_active_user(current_user: UserInDB = Depends(get_user_from_token)) -> Optional[UserInDB]:
+def get_current_active_user(
+    token_type: str = 'bearer',
+    current_user: UserInDB = Depends(get_user_from_token)) -> Optional[UserInDB]:
     if not current_user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED, 

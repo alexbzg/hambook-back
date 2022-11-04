@@ -7,6 +7,7 @@ config = Config(".env")
 PROJECT_NAME = "hambook"
 VERSION = "1.0.0"
 API_PREFIX = "/api"
+SRV_URI = config("SRV_URI", cast=str, default="http://dev.hambook.net")
 
 SECRET_KEY = config("SECRET_KEY", cast=Secret)
 ACCESS_TOKEN_EXPIRE_MINUTES = config(

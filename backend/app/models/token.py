@@ -10,7 +10,7 @@ class JWTMeta(CoreModel):
     aud: str = JWT_AUDIENCE
     iat: float = datetime.timestamp(datetime.utcnow())
     exp: float = datetime.timestamp(datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-
+    type: str = 'bearer'
 
 class JWTCreds(CoreModel):
     """How we'll identify users"""

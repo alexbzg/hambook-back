@@ -8,18 +8,18 @@ from starlette.status import (
     HTTP_422_UNPROCESSABLE_ENTITY,
 )
 from fastapi.security import OAuth2PasswordRequestForm
-
+from pydantic import EmailStr
 
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.auth import get_current_active_user
 from app.models.user import UserCreate, UserInDB, UserPublic
 from app.models.token import AccessToken
-from app.services import auth_service
-
+from app.services import auth_service, email_service
 from app.db.repositories.users import UsersRepository
-
+from app.core.config import SRV_URI, API_PREFIX
 
 router = APIRouter()
+API_URI = f"{SRV_URI}/{API_PREFIX}"
 
 @router.post("/", response_model=UserPublic, name="users:register-new-user", status_code=HTTP_201_CREATED)
 async def register_new_user(
@@ -27,6 +27,8 @@ async def register_new_user(
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
 ) -> UserPublic:
     created_user = await user_repo.register_new_user(new_user=new_user)
+
+    await send_email_verification(user=created_user)
 
     access_token = AccessToken(
         access_token=auth_service.create_access_token_for_user(user=created_user), token_type="bearer"
@@ -53,4 +55,20 @@ async def user_login_with_email_and_password(
 async def get_currently_authenticated_user(current_user: UserInDB = Depends(get_current_active_user)) -> UserPublic:
     return current_user
 
+@router.get("/email_verification/request", response_model=dict, name="users:email-verification-request")
+async def email_verification_request(current_user: UserInDB = Depends(get_current_active_user)) -> UserPublic:
+    await send_email_verification(user=current_user)
+
+    return {'result': 'Ok'}
+
+async def send_email_verification(user: UserInDB):
+    verification_token = auth_service.create_access_token_for_user(user=user, token_type='email verification')
+    subject = 'Hambook.net email verification'
+    await email_service.send(
+            recipients=[EmailStr(user.email)],
+            subject=subject,
+            template='email_verification',
+            template_params={
+                'verify_url': f"{API_URI}/verify_email/{verification_token}",
+                'title': subject})
 

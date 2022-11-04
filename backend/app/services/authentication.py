@@ -45,6 +45,7 @@ class AuthService:
         secret_key: str = str(SECRET_KEY),
         audience: str = JWT_AUDIENCE,
         expires_in: int = ACCESS_TOKEN_EXPIRE_MINUTES,
+        token_type: str = 'bearer'
     ) -> str:
         if not user or not isinstance(user, UserInDB):
             return None
@@ -52,6 +53,7 @@ class AuthService:
             aud=audience,
             iat=datetime.timestamp(datetime.utcnow()),
             exp=datetime.timestamp(datetime.utcnow() + timedelta(minutes=expires_in)),
+            type=token_type
         )
         jwt_creds = JWTCreds(sub=user.email, id=user.id)
         token_payload = JWTPayload(
@@ -61,10 +63,18 @@ class AuthService:
         access_token = jwt.encode(token_payload.dict(), secret_key, algorithm=JWT_ALGORITHM)
         return access_token
 
-    def get_userid_from_token(self, *, token: str, secret_key: str) -> Optional[str]:
+    def get_userid_from_token(
+        self, 
+        *, 
+        token: str, 
+        secret_key: str,
+        token_type: str = 'bearer'
+        ) -> Optional[str]:
         try:
             decoded_token = jwt.decode(token, str(secret_key), audience=JWT_AUDIENCE, algorithms=[JWT_ALGORITHM])
             payload = JWTPayload(**decoded_token)
+            if payload.type != token_type:
+                raise ValidationError
         except (jwt.PyJWTError, ValidationError):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
