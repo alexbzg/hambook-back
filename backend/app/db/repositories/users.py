@@ -28,6 +28,12 @@ GET_USER_BY_ID_QUERY = """
     WHERE id = :id;
 """
 
+UPDATE_USER_QUERY = """
+    UPDATE users 
+    SET email_verified = :email_verified, password = :password, salt = :salt
+    WHERE id = :id;
+"""
+
 class UsersRepository(BaseRepository):
     """"
     All database actions associated with the User resource
@@ -42,6 +48,29 @@ class UsersRepository(BaseRepository):
         if not user_record:
             return None
         return UserInDB(**user_record)
+
+    async def update_user(self, *, user: UserInDB, update_params: dict) -> UserInDB:
+        update_user_params = user.copy(update=update_params)
+        updated_user = await self.db.fetch_one(query=UPDATE_USER_QUERY, values=update_user_params.dict())
+        return UserInDB(**updated_user)
+
+    async def verify_user_email(self, *, userid: int):
+        user = await self.get_user_by_id(userid=userid)
+        if not user or user.email_verified:
+            return none
+        return await self.update_user(user=user, update={'email_verified': True})
+
+    async def change_user_password(self, 
+            *, 
+            userid: int,
+            password: str,
+            ) -> UserInDB:
+        user = await self.get_user_by_id(userid=userid)
+        if not user:
+            return None
+        user_password_update = self.auth_service.create_salt_and_hashed_password(
+            plaintext_password=password)
+        return await self.update_user(user=user, update=user_password_update.dict())
 
     async def get_user_by_id(self, *, userid: int) -> UserInDB:
         user_record = await self.db.fetch_one(query=GET_USER_BY_ID_QUERY, values={"id": userid})

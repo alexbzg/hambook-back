@@ -8,18 +8,18 @@ from starlette.status import (
     HTTP_422_UNPROCESSABLE_ENTITY,
 )
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import EmailStr
+from pydantic import EmailStr, constr
 
 from app.api.dependencies.database import get_repository
-from app.api.dependencies.auth import get_current_active_user
+from app.api.dependencies.auth import get_current_active_user, get_user_from_token
 from app.models.user import UserCreate, UserInDB, UserPublic
 from app.models.token import AccessToken
 from app.services import auth_service, email_service
 from app.db.repositories.users import UsersRepository
-from app.core.config import SRV_URI, API_PREFIX
+from app.core.config import SRV_URI, API_PREFIX, TEMPORARY_TOKEN_EXPIRE_MINUTES
 
 router = APIRouter()
-API_URI = f"{SRV_URI}/{API_PREFIX}"
+API_URI = f"{SRV_URI}{API_PREFIX}"
 
 @router.post("/", response_model=UserPublic, name="users:register-new-user", status_code=HTTP_201_CREATED)
 async def register_new_user(
@@ -30,10 +30,13 @@ async def register_new_user(
 
     await send_email_verification(user=created_user)
 
+    return get_user_public(created_user)
+
+def get_user_public(user: UserInDB) -> UserPublic:
     access_token = AccessToken(
-        access_token=auth_service.create_access_token_for_user(user=created_user), token_type="bearer"
+        access_token=auth_service.create_access_token_for_user(user=user), token_type="bearer"
     )
-    return UserPublic(**created_user.dict(), access_token=access_token)
+    return UserPublic(**user.dict(), access_token=access_token)
 
 @router.post("/login/token/", response_model=AccessToken, name="users:login-email-and-password")
 async def user_login_with_email_and_password(
@@ -56,19 +59,94 @@ async def get_currently_authenticated_user(current_user: UserInDB = Depends(get_
     return current_user
 
 @router.get("/email_verification/request", response_model=dict, name="users:email-verification-request")
-async def email_verification_request(current_user: UserInDB = Depends(get_current_active_user)) -> UserPublic:
+async def email_verification_request(current_user: UserInDB = Depends(get_current_active_user)) -> dict:
     await send_email_verification(user=current_user)
 
     return {'result': 'Ok'}
 
+@router.get("/email_verification/{token}", response_model=dict, name="users:email-verification")
+async def email_verification(
+        token: str, 
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        ) -> UserInDB:
+    userid = auth_service.get_userid_from_token(token=token, token_type='email verification',)
+    if (userid):
+        user = await user_repo.verify_user_email(userid=userid)
+
+    if (not userid or not user or user.email_verified):
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED, 
+            detail='Invalid verification code or email is already verified',
+        )
+
+    return user
+
 async def send_email_verification(user: UserInDB):
-    verification_token = auth_service.create_access_token_for_user(user=user, token_type='email verification')
+    if (user.email_verified):
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST, 
+            detail='The email is already verified',
+        )
+    verification_token = auth_service.create_access_token_for_user(
+        user=user, 
+        token_type='email verification',
+        expires_in=TEMPORARY_TOKEN_EXPIRE_MINUTES
+        )
     subject = 'Hambook.net email verification'
     await email_service.send(
             recipients=[EmailStr(user.email)],
             subject=subject,
             template='email_verification',
             template_params={
-                'verify_url': f"{API_URI}/verify_email/{verification_token}",
+                'verify_url': f"{API_URI}/users/email_verification/{verification_token}",
                 'title': subject})
+
+
+@router.get("/password_reset/request/{email}", response_model=dict, name="users:password-reset-request")
+async def password_reset_request(
+        email: EmailStr, 
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        ) -> dict:
+    user = await user_repo.get_user_by_email(email=email)
+    if not user:
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST, 
+            detail='No user was found with this email',
+        )
+    token = auth_service.create_access_token_for_user(
+            user=user, 
+            token_type='password reset',
+            expires_in=TEMPORARY_TOKEN_EXPIRE_MINUTES,
+            )
+    subject = 'Hambook.net password reset'
+    await email_service.send(
+            recipients=[EmailStr(email)],
+            subject=subject,
+            template='password_reset',
+            template_params={
+                'verify_url': f"{SRV_URI}/password_reset?token={token}",
+                'title': subject})
+   
+    return {'result': 'Ok'}
+
+@router.post("/password_reset", response_model=UserPublic, name="users:password-reset")
+async def password_reset(
+    password: constr(min_length=8, max_length=64),
+    token: str,
+    user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    )->UserPublic:
+    
+    userid = auth_service.get_userid_from_token(token=token, token_type='password recovery',)
+    if (userid):
+        user = await user_repo.change_user_password(userid=userid, password=password)
+
+    if (not userid or not user):
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED, 
+            detail='Invalid reset code',
+        )
+        if not user.email_verified:
+            user = await user_repo.verify_user_email(userid=userid)
+    return get_user_public(user)
+    
 

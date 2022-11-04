@@ -67,8 +67,8 @@ class AuthService:
         self, 
         *, 
         token: str, 
-        secret_key: str,
-        token_type: str = 'bearer'
+        secret_key: str = str(SECRET_KEY),
+        token_type: str = 'bearer',
         ) -> Optional[str]:
         try:
             decoded_token = jwt.decode(token, str(secret_key), audience=JWT_AUDIENCE, algorithms=[JWT_ALGORITHM])

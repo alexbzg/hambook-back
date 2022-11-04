@@ -1,4 +1,5 @@
 from typing import Optional
+import logging
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -20,9 +21,13 @@ async def get_user_from_token(
     token_type: str = 'bearer'
 ) -> Optional[UserInDB]:
     try:
-        userid = auth_service.get_userid_from_token(token=token, secret_key=str(SECRET_KEY))
+        userid = auth_service.get_userid_from_token(
+                token=token, 
+                secret_key=str(SECRET_KEY),
+                token_type=token_type,)
         user = await user_repo.get_user_by_id(userid=userid)
     except Exception as e:
+        logging.EXCEPTION(e)
         raise e
 
     return user
