@@ -13,7 +13,7 @@ from pydantic import EmailStr, constr
 
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.auth import get_current_active_user, get_user_from_token
-from app.models.user import UserCreate, UserInDB, UserPublic
+from app.models.user import UserCreate, UserInDB, UserPublic, UserPasswordReset
 from app.models.token import AccessToken
 from app.services import auth_service, email_service, html_templates_service
 from app.db.repositories.users import UsersRepository
@@ -140,26 +140,29 @@ async def password_reset_request(
 
 @router.post("/password_reset", response_model=UserPublic, name="users:password-reset")
 async def password_reset(
-    password: constr(min_length=8, max_length=64),
-    token: str,
+    password_reset: UserPasswordReset = Body(..., embed=True),
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
     )->UserPublic:
     
     try:
-        userid = auth_service.get_userid_from_token(token=token, token_type='password reset',)
+        userid = auth_service.get_userid_from_token(token=password_reset.token, token_type='password reset',)
     except HTTPException:
         userid = None
 
     if (userid):
-        user = await user_repo.change_user_password(userid=userid, password=password)
+        user = await user_repo.change_user_password(userid=userid, password=password_reset.password)
 
     if (not userid or not user):
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, 
             detail='Invalid reset code',
         )
-        if not user.email_verified:
-            user = await user_repo.verify_user_email(userid=userid)
+
+    #if the user had not verified email already we will do it now because they just has passed
+    #similar requirements
+    if not user.email_verified:
+        user = await user_repo.verify_user_email(userid=userid)
+
     return get_user_public(user)
     
 

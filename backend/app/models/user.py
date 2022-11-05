@@ -28,6 +28,13 @@ class UserPasswordUpdate(CoreModel):
     password: constr(min_length=8, max_length=64)
     salt: str
 
+class UserPasswordReset(CoreModel):
+    """
+    Users can reset their forgotten password with token via email
+    """
+    password: constr(min_length=8, max_length=64)
+    token: str
+
 class UserInDB(IDModelMixin, DateTimeModelMixin, UserBase):
     """
     Add in id, created_at, updated_at, user's password and salt

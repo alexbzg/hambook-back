@@ -354,3 +354,66 @@ class TestEmailVerification:
         res = await client.get(app.url_path_for("users:email-verification", token=token))
         assert res.status_code == HTTP_401_UNAUTHORIZED
 
+class TestPasswordReset:
+    async def test_user_can_request_password_reset(
+        self, app: FastAPI, client: AsyncClient, test_user: UserInDB,
+    ) -> None:
+        res = await client.get(app.url_path_for("users:password-reset-request", email=test_user.email))
+        assert res.status_code == HTTP_200_OK
+
+    async def test_user_cannot_request_password_reset_with_wrong_email(
+        self, app: FastAPI, client: AsyncClient,
+    ) -> None:
+        res = await client.get(app.url_path_for("users:password-reset-request", email="wrong@email.com"))
+        assert res.status_code == HTTP_400_BAD_REQUEST
+
+    async def test_user_can_reset_password(
+        self, 
+        app: FastAPI, 
+        client: AsyncClient,
+        db: Database,
+        test_user: UserInDB
+        ) -> None:
+        token = auth_service.create_access_token_for_user(
+                user=test_user, 
+                secret_key=str(SECRET_KEY), 
+                token_type='password reset')
+        new_password = "18181818"
+        res = await client.post(app.url_path_for("users:password-reset"), 
+            json={"password_reset": {"token": token, "password": new_password}})
+        assert res.status_code == HTTP_200_OK
+        user_repo = UsersRepository(db)
+        if test_user.email_verified:
+            await user_repo.update_user(user=test_user, update_params={'email_verified': False})
+        user_in_db = await user_repo.authenticate_user(email=test_user.email, password=new_password)
+        assert user_in_db
+        assert user_in_db.email_verified
+
+    @pytest.mark.parametrize(
+        "secret, wrong_token, token_type",
+        (
+            (SECRET_KEY, "asdf", "password reset"),  # use wrong token
+            (SECRET_KEY, None, "password reset"),  # use wrong token
+            ("ABC123", "use correct token", "password reset"),  # use wrong secret
+            (SECRET_KEY, "use correct token", "bearer"),  # use wrong token type
+        ),
+    )
+    async def test_users_cannot_reset_password_when_token_or_secret_is_wrong(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        db: Database,
+        test_user: UserInDB,
+        secret: Union[Secret, str],
+        wrong_token: Optional[str],
+        token_type: str,
+        ) -> None:
+        token = auth_service.create_access_token_for_user(
+                user=test_user, 
+                secret_key=str(secret), 
+                token_type=token_type) if wrong_token == "use correct token" else wrong_token
+        res = await client.post(app.url_path_for("users:password-reset"), 
+                json={'password_reset': {"token": token, "password": "18181818"}})
+        res = await client.get(app.url_path_for("users:email-verification", token=token))
+        assert res.status_code == HTTP_401_UNAUTHORIZED
+
