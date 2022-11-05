@@ -1,14 +1,10 @@
 from typing import List
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig
 from pydantic import EmailStr, BaseModel
-from jinja2 import Environment, select_autoescape, PackageLoader
 
 from app.core.config import EMAIL_USER, EMAIL_PASSWORD, EMAIL_FROM, EMAIL_PORT, EMAIL_HOST
+from app.services import html_templates_service
 
-jinja_env = Environment(
-    loader=PackageLoader('app', 'templates'),
-    autoescape=select_autoescape(['html', 'xml'])
-)
 
 class EmailSchema(BaseModel):
     email: List[EmailStr]
@@ -35,7 +31,7 @@ class EmailService:
             VALIDATE_CERTS=True
         )
         # Generate the HTML template base on the template name
-        template = jinja_env.get_template(f'{template}.html')
+        template = html_templates_service.template(template)
 
         html = template.render(**template_params)
 

@@ -70,16 +70,18 @@ class AuthService:
         secret_key: str = str(SECRET_KEY),
         token_type: str = 'bearer',
         ) -> Optional[str]:
+        not_valid = False
         try:
             decoded_token = jwt.decode(token, str(secret_key), audience=JWT_AUDIENCE, algorithms=[JWT_ALGORITHM])
             payload = JWTPayload(**decoded_token)
-            if payload.type != token_type:
-                raise ValidationError
+            not_valid = payload.type != token_type
         except (jwt.PyJWTError, ValidationError):
+            not_valid = True
+        if not_valid:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate token credentials.",
-                headers={"WWW-Authenticate": "Bearer"},
+                headers={"WWW-Authenticate": {token_type} },
             )
         return payload.id
 

@@ -31,7 +31,8 @@ GET_USER_BY_ID_QUERY = """
 UPDATE_USER_QUERY = """
     UPDATE users 
     SET email_verified = :email_verified, password = :password, salt = :salt
-    WHERE id = :id;
+    WHERE id = :id
+    RETURNING id, email, email_verified, password, salt, created_at, updated_at;
 """
 
 class UsersRepository(BaseRepository):
@@ -50,15 +51,15 @@ class UsersRepository(BaseRepository):
         return UserInDB(**user_record)
 
     async def update_user(self, *, user: UserInDB, update_params: dict) -> UserInDB:
-        update_user_params = user.copy(update=update_params)
+        update_user_params = user.copy(update=update_params, exclude={"email", "created_at", "updated_at"})
         updated_user = await self.db.fetch_one(query=UPDATE_USER_QUERY, values=update_user_params.dict())
         return UserInDB(**updated_user)
 
     async def verify_user_email(self, *, userid: int):
         user = await self.get_user_by_id(userid=userid)
         if not user or user.email_verified:
-            return none
-        return await self.update_user(user=user, update={'email_verified': True})
+            return None
+        return await self.update_user(user=user, update_params={'email_verified': True})
 
     async def change_user_password(self, 
             *, 
@@ -70,7 +71,7 @@ class UsersRepository(BaseRepository):
             return None
         user_password_update = self.auth_service.create_salt_and_hashed_password(
             plaintext_password=password)
-        return await self.update_user(user=user, update=user_password_update.dict())
+        return await self.update_user(user=user, update_params=user_password_update.dict())
 
     async def get_user_by_id(self, *, userid: int) -> UserInDB:
         user_record = await self.db.fetch_one(query=GET_USER_BY_ID_QUERY, values={"id": userid})

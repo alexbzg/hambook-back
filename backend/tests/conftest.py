@@ -21,18 +21,6 @@ def test_user_password_plain() -> str:
     return "12345678"
 
 @pytest.fixture
-async def test_user(db: Database, test_user_password_plain: str) -> UserInDB:
-    new_user = UserCreate(
-        email="aaa@bbb.cc",
-        password=test_user_password_plain
-    )
-    user_repo = UsersRepository(db)
-    existing_user = await user_repo.get_user_by_email(email=new_user.email)
-    if existing_user:
-        return existing_user
-    return await user_repo.register_new_user(new_user=new_user)
-
-@pytest.fixture
 def authorized_client(client: AsyncClient, test_user: UserInDB) -> AsyncClient:
     access_token = auth_service.create_access_token_for_user(user=test_user, secret_key=str(SECRET_KEY))
     client.headers = {
@@ -77,5 +65,17 @@ async def client(app: FastAPI) -> AsyncClient:
             headers={"Content-Type": "application/json"}
         ) as client:
             yield client
+
+@pytest.fixture
+async def test_user(db: Database, test_user_password_plain: str) -> UserInDB:
+    new_user = UserCreate(
+        email="alexbzg@gmail.com",
+        password=test_user_password_plain
+    )
+    user_repo = UsersRepository(db)
+    existing_user = await user_repo.get_user_by_email(email=new_user.email)
+    if existing_user:
+        return existing_user
+    return await user_repo.register_new_user(new_user=new_user)
 
 

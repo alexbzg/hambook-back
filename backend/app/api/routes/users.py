@@ -1,4 +1,5 @@
 from fastapi import Depends, APIRouter, HTTPException, Path, Body
+from fastapi.responses import HTMLResponse
 from starlette.status import (
     HTTP_200_OK, 
     HTTP_201_CREATED, 
@@ -14,7 +15,7 @@ from app.api.dependencies.database import get_repository
 from app.api.dependencies.auth import get_current_active_user, get_user_from_token
 from app.models.user import UserCreate, UserInDB, UserPublic
 from app.models.token import AccessToken
-from app.services import auth_service, email_service
+from app.services import auth_service, email_service, html_templates_service
 from app.db.repositories.users import UsersRepository
 from app.core.config import SRV_URI, API_PREFIX, TEMPORARY_TOKEN_EXPIRE_MINUTES
 
@@ -64,22 +65,30 @@ async def email_verification_request(current_user: UserInDB = Depends(get_curren
 
     return {'result': 'Ok'}
 
-@router.get("/email_verification/{token}", response_model=dict, name="users:email-verification")
+@router.get("/email_verification/{token}", name="users:email-verification")
 async def email_verification(
         token: str, 
         user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
         ) -> UserInDB:
-    userid = auth_service.get_userid_from_token(token=token, token_type='email verification',)
+    try:
+        userid = auth_service.get_userid_from_token(token=token, token_type='email verification',)
+    except HTTPException:
+        userid = None
+
+    status_code = HTTP_200_OK
+    result = 'Your email was verified successfully.'
     if (userid):
         user = await user_repo.verify_user_email(userid=userid)
 
-    if (not userid or not user or user.email_verified):
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED, 
-            detail='Invalid verification code or email is already verified',
-        )
 
-    return user
+    if (not userid or not user):
+        status_code=HTTP_401_UNAUTHORIZED
+        result = 'Invalid verification code or email is already verified'
+
+    template = html_templates_service.template('email_verification_response')
+    html = template.render(title='HAMBOOK.net email verification', result=result)
+
+    return HTMLResponse(content=html, status_code=status_code)
 
 async def send_email_verification(user: UserInDB):
     if (user.email_verified):
@@ -124,7 +133,7 @@ async def password_reset_request(
             subject=subject,
             template='password_reset',
             template_params={
-                'verify_url': f"{SRV_URI}/password_reset?token={token}",
+                'reset_url': f"{SRV_URI}/password_reset?token={token}",
                 'title': subject})
    
     return {'result': 'Ok'}
@@ -136,7 +145,11 @@ async def password_reset(
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
     )->UserPublic:
     
-    userid = auth_service.get_userid_from_token(token=token, token_type='password recovery',)
+    try:
+        userid = auth_service.get_userid_from_token(token=token, token_type='password reset',)
+    except HTTPException:
+        userid = None
+
     if (userid):
         user = await user_repo.change_user_password(userid=userid, password=password)
 

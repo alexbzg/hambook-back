@@ -212,6 +212,8 @@ class TestUserLogin:
 		assert creds["sub"] == test_user.email
 		assert "id" in creds
 		assert creds["id"] == test_user.id
+		assert "type" in creds
+		assert creds["type"] == "bearer"
 # check that token is proper type
 		assert "token_type" in res.json()
 		assert res.json().get("token_type") == "bearer"
@@ -276,4 +278,79 @@ class TestUserMe:
         )
         assert res.status_code == HTTP_401_UNAUTHORIZED
 
- 
+class TestEmailVerification:
+    async def test_authenticated_user_can_request_email_verification(
+        self, app: FastAPI, authorized_client: AsyncClient, test_user: UserInDB,
+    ) -> None:
+        res = await authorized_client.get(app.url_path_for("users:email-verification-request"))
+        assert res.status_code == HTTP_200_OK
+
+    async def test_user_cannot_request_email_verification_when_not_authenticated(
+        self, app: FastAPI, client: AsyncClient, test_user: UserInDB,
+    ) -> None:
+        res = await client.get(app.url_path_for("users:email-verification-request"))
+        assert res.status_code == HTTP_401_UNAUTHORIZED
+
+    async def test_user_can_verify_email(
+        self, 
+        app: FastAPI, 
+        client: AsyncClient,
+        db: Database,
+        test_user: UserInDB
+        ) -> None:
+        token = auth_service.create_access_token_for_user(
+                user=test_user, 
+                secret_key=str(SECRET_KEY), 
+                token_type='email verification')
+        res = await client.get(app.url_path_for("users:email-verification", token=token))
+        assert res.status_code == HTTP_200_OK
+        user_repo = UsersRepository(db)
+        user_in_db = await user_repo.get_user_by_email(email=test_user.email)
+        assert user_in_db.email_verified
+
+    async def test_user_cannnot_verify_email_if_already_verified(
+        self, 
+        app: FastAPI, 
+        client: AsyncClient,
+        db: Database,
+        test_user: UserInDB
+        ) -> None:
+        token = auth_service.create_access_token_for_user(
+                user=test_user, 
+                secret_key=str(SECRET_KEY), 
+                token_type='email verification')
+        user_repo = UsersRepository(db)
+        if not test_user.email_verified:
+            await user_repo.verify_user_email(user=test_user)
+        res = await client.get(app.url_path_for("users:email-verification", token=token))
+        assert res.status_code == HTTP_401_UNAUTHORIZED
+
+    @pytest.mark.parametrize(
+        "secret, wrong_token, token_type",
+        (
+            (SECRET_KEY, "asdf", "email verification"),  # use wrong token
+            (SECRET_KEY, None, "email verification"),  # use wrong token
+            ("ABC123", "use correct token", "email verification"),  # use wrong secret
+            (SECRET_KEY, "use correct token", "bearer"),  # use wrong token type
+        ),
+    )
+    async def test_users_cannot_verify_email_when_token_or_secret_is_wrong(
+        self,
+        app: FastAPI,
+        client: AsyncClient,
+        db: Database,
+        test_user: UserInDB,
+        secret: Union[Secret, str],
+        wrong_token: Optional[str],
+        token_type: str,
+        ) -> None:
+        user_repo = UsersRepository(db)
+        if test_user.email_verified:
+            await user_repo.update_user(user=test_user, update_params={'email_verified': False})
+        token = auth_service.create_access_token_for_user(
+                user=test_user, 
+                secret_key=str(secret), 
+                token_type=token_type) if wrong_token == "use correct token" else wrong_token
+        res = await client.get(app.url_path_for("users:email-verification", token=token))
+        assert res.status_code == HTTP_401_UNAUTHORIZED
+
