@@ -8,6 +8,11 @@ Create Date: ${create_date}
 from alembic import op
 import sqlalchemy as sa
 
+import sys, pathlib
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from common import timestamps
+
+
 ${imports if imports else ""}
 
 # revision identifiers, used by Alembic
