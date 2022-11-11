@@ -20,6 +20,7 @@ TEMPORARY_TOKEN_EXPIRE_MINUTES = config(
     cast=int,
     default=1 * 60  # one hour
 )
+STATIC_WWW_ROOT = config("STATIC_WWW_ROOT", cast=str)
 
 JWT_ALGORITHM = config("JWT_ALGORITHM", cast=str, default="HS256")
 JWT_AUDIENCE = config("JWT_AUDIENCE", cast=str, default="hambook.net:auth")

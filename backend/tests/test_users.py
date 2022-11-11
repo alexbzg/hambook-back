@@ -4,8 +4,8 @@ import jwt
 
 from pydantic import ValidationError
 from starlette.datastructures import Secret
-from httpx import AsyncClient
 from fastapi import FastAPI, HTTPException, status
+from async_asgi_testclient import TestClient
 
 from starlette.status import (
     HTTP_200_OK, 
@@ -28,7 +28,7 @@ pytestmark = pytest.mark.asyncio
 
 
 class TestUserRoutes:
-    async def test_routes_exist(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_routes_exist(self, app: FastAPI, client: TestClient) -> None:
         new_user = {"email": "test@email.io", "password": "testpassword"}
         res = await client.post(app.url_path_for("users:register-new-user"), json={"new_user": new_user})
         assert res.status_code != HTTP_404_NOT_FOUND
@@ -38,7 +38,7 @@ class TestUserRegistration:
     async def test_users_can_register_successfully(
         self, 
         app: FastAPI, 
-        client: AsyncClient,
+        client: TestClient,
         db: Database,
     ) -> None:
         user_repo = UsersRepository(db)
@@ -67,7 +67,7 @@ class TestUserRegistration:
     async def test_user_registration_fails_when_credentials_are_taken(
         self, 
         app: FastAPI, 
-        client: AsyncClient,
+        client: TestClient,
         db: Database,
         attr: str,
         value: str,
@@ -82,7 +82,7 @@ class TestUserRegistration:
 class TestAuthTokens:
 
     async def test_can_create_access_token_successfully(
-        self, app: FastAPI, client: AsyncClient, test_user: UserInDB
+        self, app: FastAPI, client: TestClient, test_user: UserInDB
     ) -> None:
         access_token = auth_service.create_access_token_for_user(
             user=test_user,
@@ -94,7 +94,7 @@ class TestAuthTokens:
         assert creds["id"] == test_user.id
         assert creds["aud"] == JWT_AUDIENCE
 
-    async def test_token_missing_user_is_invalid(self, app: FastAPI, client: AsyncClient) -> None:
+    async def test_token_missing_user_is_invalid(self, app: FastAPI, client: TestClient) -> None:
         access_token = auth_service.create_access_token_for_user(
             user=None,
             secret_key=str(SECRET_KEY),
@@ -117,7 +117,7 @@ class TestAuthTokens:
     async def test_invalid_token_content_raises_error(
         self,
         app: FastAPI,
-        client: AsyncClient,
+        client: TestClient,
         test_user: UserInDB,
         secret_key: Union[str, Secret],
         jwt_audience: str,
@@ -133,7 +133,7 @@ class TestAuthTokens:
             jwt.decode(access_token, str(SECRET_KEY), audience=JWT_AUDIENCE, algorithms=[JWT_ALGORITHM])
 
     async def test_can_retrieve_userid_from_token(
-        self, app: FastAPI, client: AsyncClient, test_user: UserInDB
+        self, app: FastAPI, client: TestClient, test_user: UserInDB
     ) -> None:
         token = auth_service.create_access_token_for_user(user=test_user, secret_key=str(SECRET_KEY))
         userid = auth_service.get_userid_from_token(token=token, secret_key=str(SECRET_KEY))
@@ -152,7 +152,7 @@ class TestAuthTokens:
     async def test_error_when_token_or_secret_is_wrong(
         self,
         app: FastAPI,
-        client: AsyncClient,
+        client: TestClient,
         test_user: UserInDB,
         secret: Union[Secret, str],
         wrong_token: Optional[str],
@@ -164,7 +164,7 @@ class TestAuthTokens:
             username = auth_service.get_username_from_token(token=wrong_token, secret_key=str(secret))    
 
     async def test_can_retrieve_userid_from_token(
-        self, app: FastAPI, client: AsyncClient, test_user: UserInDB
+        self, app: FastAPI, client: TestClient, test_user: UserInDB
     ) -> None:
         token = auth_service.create_access_token_for_user(user=test_user, secret_key=str(SECRET_KEY))
         userid = auth_service.get_userid_from_token(token=token, secret_key=str(SECRET_KEY))
@@ -182,7 +182,7 @@ class TestAuthTokens:
     async def test_error_when_token_or_secret_is_wrong(
         self,
         app: FastAPI,
-        client: AsyncClient,
+        client: TestClient,
         test_user: UserInDB,
         secret: Union[Secret, str],
         wrong_token: Optional[str],
@@ -196,14 +196,14 @@ class TestAuthTokens:
 
 class TestUserLogin:
 	async def test_user_can_login_successfully_and_receives_valid_token(
-		self, app: FastAPI, client: AsyncClient, test_user: UserInDB, test_user_password_plain: str
+		self, app: FastAPI, client: TestClient, test_user: UserInDB, test_user_password_plain: str
 	) -> None:
 		client.headers["content-type"] = "application/x-www-form-urlencoded"
 		login_data = {
 			"username": test_user.email,
 			"password": test_user_password_plain
 		}
-		res = await client.post(app.url_path_for("users:login-email-and-password"), data=login_data)
+		res = await client.post(app.url_path_for("users:login-email-and-password"), form=login_data)
 		assert res.status_code == HTTP_200_OK
 # check that token exists in response and has user encoded within it
 		token = res.json().get("access_token")
@@ -230,7 +230,7 @@ class TestUserLogin:
 	async def test_user_with_wrong_creds_doesnt_receive_token(
 		self,
 		app: FastAPI,
-		client: AsyncClient,
+		client: TestClient,
 		test_user: UserInDB,
 		test_user_password_plain: str,
 		credential: str,
@@ -246,14 +246,14 @@ class TestUserLogin:
 			"password": user_data["password"],  # insert password from parameters
 		}
 
-		res = await client.post(app.url_path_for("users:login-email-and-password"), data=login_data)
+		res = await client.post(app.url_path_for("users:login-email-and-password"), form=login_data)
 		assert res.status_code == status_code
 		assert "access_token" not in res.json()
 
 
 class TestUserMe:
     async def test_authenticated_user_can_retrieve_own_data(
-        self, app: FastAPI, authorized_client: AsyncClient, test_user: UserInDB,
+        self, app: FastAPI, authorized_client: TestClient, test_user: UserInDB,
     ) -> None:
         res = await authorized_client.get(app.url_path_for("users:get-current-user"))
         assert res.status_code == HTTP_200_OK
@@ -262,7 +262,7 @@ class TestUserMe:
         assert user.id == test_user.id
 
     async def test_user_cannot_access_own_data_if_not_authenticated(
-        self, app: FastAPI, client: AsyncClient, test_user: UserInDB,
+        self, app: FastAPI, client: TestClient, test_user: UserInDB,
     ) -> None:
         res = await client.get(app.url_path_for("users:get-current-user"))
         assert res.status_code == HTTP_401_UNAUTHORIZED
@@ -270,7 +270,7 @@ class TestUserMe:
 
     @pytest.mark.parametrize("jwt_prefix", (("",), ("value",), ("Token",), ("JWT",), ("Swearer",),))
     async def test_user_cannot_access_own_data_with_incorrect_jwt_prefix(
-        self, app: FastAPI, client: AsyncClient, test_user: UserInDB, jwt_prefix: str,
+        self, app: FastAPI, client: TestClient, test_user: UserInDB, jwt_prefix: str,
     ) -> None:
         token = auth_service.create_access_token_for_user(user=test_user, secret_key=str(SECRET_KEY))
         res = await client.get(
@@ -280,13 +280,13 @@ class TestUserMe:
 
 class TestEmailVerification:
     async def test_authenticated_user_can_request_email_verification(
-        self, app: FastAPI, authorized_client: AsyncClient, test_user: UserInDB,
+        self, app: FastAPI, authorized_client: TestClient, test_user: UserInDB,
     ) -> None:
         res = await authorized_client.get(app.url_path_for("users:email-verification-request"))
         assert res.status_code == HTTP_200_OK
 
     async def test_user_cannot_request_email_verification_when_not_authenticated(
-        self, app: FastAPI, client: AsyncClient, test_user: UserInDB,
+        self, app: FastAPI, client: TestClient, test_user: UserInDB,
     ) -> None:
         res = await client.get(app.url_path_for("users:email-verification-request"))
         assert res.status_code == HTTP_401_UNAUTHORIZED
@@ -294,7 +294,7 @@ class TestEmailVerification:
     async def test_user_can_verify_email(
         self, 
         app: FastAPI, 
-        client: AsyncClient,
+        client: TestClient,
         db: Database,
         test_user: UserInDB
         ) -> None:
@@ -311,7 +311,7 @@ class TestEmailVerification:
     async def test_user_cannnot_verify_email_if_already_verified(
         self, 
         app: FastAPI, 
-        client: AsyncClient,
+        client: TestClient,
         db: Database,
         test_user: UserInDB
         ) -> None:
@@ -337,7 +337,7 @@ class TestEmailVerification:
     async def test_users_cannot_verify_email_when_token_or_secret_is_wrong(
         self,
         app: FastAPI,
-        client: AsyncClient,
+        client: TestClient,
         db: Database,
         test_user: UserInDB,
         secret: Union[Secret, str],
@@ -356,13 +356,13 @@ class TestEmailVerification:
 
 class TestPasswordReset:
     async def test_user_can_request_password_reset(
-        self, app: FastAPI, client: AsyncClient, test_user: UserInDB,
+        self, app: FastAPI, client: TestClient, test_user: UserInDB,
     ) -> None:
         res = await client.get(app.url_path_for("users:password-reset-request", email=test_user.email))
         assert res.status_code == HTTP_200_OK
 
     async def test_user_cannot_request_password_reset_with_wrong_email(
-        self, app: FastAPI, client: AsyncClient,
+        self, app: FastAPI, client: TestClient,
     ) -> None:
         res = await client.get(app.url_path_for("users:password-reset-request", email="wrong@email.com"))
         assert res.status_code == HTTP_400_BAD_REQUEST
@@ -370,7 +370,7 @@ class TestPasswordReset:
     async def test_user_can_reset_password(
         self, 
         app: FastAPI, 
-        client: AsyncClient,
+        client: TestClient,
         db: Database,
         test_user: UserInDB
         ) -> None:
@@ -401,7 +401,7 @@ class TestPasswordReset:
     async def test_users_cannot_reset_password_when_token_or_secret_is_wrong(
         self,
         app: FastAPI,
-        client: AsyncClient,
+        client: TestClient,
         db: Database,
         test_user: UserInDB,
         secret: Union[Secret, str],
