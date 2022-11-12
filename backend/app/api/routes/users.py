@@ -37,7 +37,7 @@ def get_user_public(user: UserInDB) -> UserPublic:
     access_token = AccessToken(
         access_token=auth_service.create_access_token_for_user(user=user), token_type="bearer"
     )
-    return UserPublic(**user.dict(), access_token=access_token)
+    return UserPublic(**user.dict(exclude={'access_token'}), access_token=access_token)
 
 @router.post("/login/token/", response_model=AccessToken, name="users:login-email-and-password")
 async def user_login_with_email_and_password(

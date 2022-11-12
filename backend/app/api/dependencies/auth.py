@@ -27,7 +27,7 @@ async def get_user_from_token(
                 token_type=token_type,)
         user = await user_repo.get_user_by_id(userid=userid)
     except Exception as e:
-        logging.EXCEPTION(e)
+        logging.exception(e)
         raise e
 
     return user

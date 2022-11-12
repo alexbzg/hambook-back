@@ -50,11 +50,11 @@ class TestUserRegistration:
         res = await client.post(app.url_path_for("users:register-new-user"), json={"new_user": new_user})
         assert res.status_code == HTTP_201_CREATED
         # ensure that the user now exists in the db
-        user_in_db = await user_repo.get_user_by_email(email=new_user["email"])
+        user_in_db = await user_repo.get_user_by_email(email=new_user["email"], populate=False)
         assert user_in_db is not None
         assert user_in_db.email == new_user["email"]
         # check that the user returned in the response is equal to the user in the database
-        created_user = UserPublic(**res.json()).dict(exclude={"access_token", "created_at", "updated_at"})
+        created_user = UserPublic(**res.json()).dict(exclude={"access_token", "created_at", "updated_at", "profile"})
         assert created_user == user_in_db.dict(exclude={"password", "salt", "created_at", "updated_at"})
     @pytest.mark.parametrize(
         "attr, value, status_code",
@@ -321,7 +321,7 @@ class TestEmailVerification:
                 token_type='email verification')
         user_repo = UsersRepository(db)
         if not test_user.email_verified:
-            await user_repo.verify_user_email(user=test_user)
+            await user_repo.verify_user_email(userid=test_user.id)
         res = await client.get(app.url_path_for("users:email-verification", token=token))
         assert res.status_code == HTTP_401_UNAUTHORIZED
 

@@ -66,7 +66,7 @@ async def test_user(db: Database, test_user_password_plain: str) -> UserInDB:
         password=test_user_password_plain
     )
     user_repo = UsersRepository(db)
-    existing_user = await user_repo.get_user_by_email(email=new_user.email)
+    existing_user = await user_repo.get_user_by_email(email=new_user.email, populate=False)
     if existing_user:
         return existing_user
     return await user_repo.register_new_user(new_user=new_user)

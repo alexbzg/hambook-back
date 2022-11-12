@@ -30,10 +30,10 @@ def upgrade() -> None:
         sa.Column("address", sa.VARCHAR(512), nullable=True),
         sa.Column("bio", sa.VARCHAR(1024), nullable=True, server_default=""),
         sa.Column("default_image", sa.CHAR(32), nullable=True),
-	    sa.Column("current_callsign", sa.VARCHAR(32), nullable=True),
+	    sa.Column("current_callsign", sa.VARCHAR(32), nullable=True, unique=True),
 	    sa.Column("prev_callsigns", sa.VARCHAR(512), nullable=True),
 	    sa.Column("birthdate", sa.DATE, nullable=True),
-        sa.Column("user_id", sa.Integer, sa.ForeignKey("users.id", ondelete="CASCADE")),
+        sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE")),
         *timestamps(),
     )
     op.execute(
