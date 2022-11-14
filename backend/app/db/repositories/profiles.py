@@ -4,23 +4,23 @@ from app.models.user import UserInDB
 
 
 CREATE_PROFILE_FOR_USER_QUERY = """
-    INSERT INTO profiles (full_name, address, default_image, current_callsign, prev_callsigns, birthdate, bio,
-        user_id)
-	VALUES (:full_name, :address, :default_image, :current_callsign, :prev_callsigns, :birthdate, :bio, 
+    INSERT INTO profiles (full_name, address, phone, default_image, current_callsign, prev_callsigns, 
+        birthdate, bio, user_id)
+    VALUES (:full_name, :address, :phone, :default_image, :current_callsign, :prev_callsigns, :birthdate, :bio, 
 		:user_id)
     RETURNING id, full_name, address, default_image, current_callsign, prev_callsigns, birthdate, bio, 
 		user_id, created_at, updated_at;
 """
 
 GET_PROFILE_BY_USER_ID_QUERY = """
-    SELECT id, full_name, address, default_image, current_callsign, prev_callsigns, birthdate, bio, 
+    SELECT id, full_name, address, phone, default_image, current_callsign, prev_callsigns, birthdate, bio, 
 		user_id, created_at, updated_at
     FROM profiles
     WHERE user_id = :user_id;
 """
 
 GET_PROFILE_BY_CALLSIGN_QUERY = """
-    SELECT id, full_name, address, default_image, current_callsign, prev_callsigns, birthdate, bio, 
+    SELECT id, full_name, address, phone, default_image, current_callsign, prev_callsigns, birthdate, bio, 
 		user_id, created_at, updated_at
     FROM profiles
     WHERE current_callsign = :callsign;
@@ -30,13 +30,14 @@ UPDATE_PROFILE_QUERY = """
     UPDATE profiles
     SET full_name   		= :full_name,
 		address				= :address,
+        phone               = :phone,
 		default_image 		= :default_image, 
 		current_callsign	= :current_callsign,
 		prev_callsigns		= :prev_callsigns,
 		birthdate			= :birthdate,
 		bio					= :bio 
     WHERE user_id = :user_id
-    RETURNING id, full_name, address, default_image, current_callsign, prev_callsigns, birthdate, bio, 
+    RETURNING id, full_name, address, phone, default_image, current_callsign, prev_callsigns, birthdate, bio, 
 		user_id, created_at, updated_at;
 """
 
@@ -67,7 +68,7 @@ class ProfilesRepository(BaseRepository):
         update_params = profile.copy(update=profile_update.dict(exclude_unset=True))
         updated_profile = await self.db.fetch_one(
             query=UPDATE_PROFILE_QUERY,
-            values=update_params.dict(exclude={"id", "created_at", "updated_at", "email"}),
+            values=update_params.dict(exclude={"id", "created_at", "updated_at"}),
         )
         return ProfileInDB(**updated_profile)
 

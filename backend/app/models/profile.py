@@ -1,14 +1,12 @@
 from typing import Optional
 from datetime import date
 
-from pydantic import EmailStr, HttpUrl
-
-from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, Callsign
-
+from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, Callsign, Phone
 
 class ProfileBase(CoreModel):
     full_name: Optional[str]
     address: Optional[str]
+    phone: Optional[Phone]
     default_image: Optional[str]
     current_callsign: Optional[Callsign]
     prev_callsigns: Optional[str]
@@ -31,7 +29,6 @@ class ProfileUpdate(ProfileBase):
 
 class ProfileInDB(IDModelMixin, DateTimeModelMixin, ProfileBase):
     user_id: int
-    email: Optional[EmailStr]
 
 class ProfilePublic(ProfileInDB):
     pass

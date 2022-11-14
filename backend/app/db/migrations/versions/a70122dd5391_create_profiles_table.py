@@ -28,6 +28,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer, primary_key=True),
         sa.Column("full_name", sa.VARCHAR(256), nullable=True),
         sa.Column("address", sa.VARCHAR(512), nullable=True),
+        sa.Column("phone", sa.CHAR(12), nullable=True),
         sa.Column("bio", sa.VARCHAR(1024), nullable=True, server_default=""),
         sa.Column("default_image", sa.CHAR(32), nullable=True),
 	    sa.Column("current_callsign", sa.VARCHAR(32), nullable=True, unique=True),

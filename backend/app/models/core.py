@@ -3,6 +3,7 @@ from datetime import datetime
 from pydantic import BaseModel, validator, constr
 
 Callsign = constr(regex=r"[a-zA-Z]{1,4}\d{1,3}[a-zA-Z]{1,4}")
+Phone = constr(regex=r"\+\d{11}")
 
 class CoreModel(BaseModel):
     """
