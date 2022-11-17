@@ -1,9 +1,13 @@
 from typing import Optional
 from datetime import datetime
 from pydantic import BaseModel, validator, constr
+from enum import IntEnum
 
 Callsign = constr(regex=r"[a-zA-Z]{1,4}\d{1,3}[a-zA-Z]{1,4}")
 Phone = constr(regex=r"\+\d{11}")
+
+class FileType(IntEnum):
+    media = 1
 
 class CoreModel(BaseModel):
     """
