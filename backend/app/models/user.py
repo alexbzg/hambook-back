@@ -44,5 +44,6 @@ class UserInDB(IDModelMixin, DateTimeModelMixin, UserBase):
     salt: str
 
 class UserPublic(IDModelMixin, DateTimeModelMixin, UserBase):
+    id: str
     access_token: Optional[AccessToken]
     profile: Optional[ProfilePublic]

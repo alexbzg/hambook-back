@@ -19,6 +19,8 @@ from app.services import auth_service, email_service, html_templates_service
 from app.db.repositories.users import UsersRepository
 from app.core.config import SRV_URI, API_PREFIX, TEMPORARY_TOKEN_EXPIRE_MINUTES
 
+import logging
+
 router = APIRouter()
 API_URI = f"{SRV_URI}{API_PREFIX}"
 
@@ -79,7 +81,6 @@ async def email_verification(
     result = 'Your email was verified successfully.'
     if (userid):
         user = await user_repo.verify_user_email(userid=userid)
-
 
     if (not userid or not user):
         status_code=HTTP_401_UNAUTHORIZED

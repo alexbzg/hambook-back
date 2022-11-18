@@ -32,5 +32,6 @@ class ProfileInDB(IDModelMixin, DateTimeModelMixin, ProfileBase):
     user_id: int
 
 class ProfilePublic(ProfileInDB):
+    user_id: str
     avatar_url: Union[HttpUrl, None]
 

@@ -12,6 +12,7 @@ from app.services import auth_service
 from app.db.repositories.profiles import ProfilesRepository
 from app.models.profile import ProfileCreate, ProfilePublic
 
+import logging
 
 REGISTER_NEW_USER_QUERY = """
     INSERT INTO users (email, password, salt)
@@ -85,7 +86,7 @@ class UsersRepository(BaseRepository):
         if user_record:
             user = UserInDB(**user_record)
             if populate:
-                return await self.populate_user(user=user)
+                return await self.populate_user(user=user)                
             return user
 
     async def register_new_user(self, *, new_user: UserCreate) -> UserInDB:

@@ -40,5 +40,6 @@ class MediaInDB(IDModelMixin, DateTimeModelMixin, MediaCreate):
     pass
 
 class MediaPublic(IDModelMixin, DateTimeModelMixin, MediaBase):
+    user_id: str
     url: HttpUrl
 
