@@ -1,13 +1,14 @@
 from typing import List
 
 from app.db.repositories.base import BaseRepository
-from app.models.media import MediaCreate, MediaInDB, MediaType
+from app.models.media import MediaUpload, MediaInDB, MediaType
 from app.models.user import UserInDB
-from app.services.static_files import delete_file, get_url_by_path
+from app.models.core import FileType
+from app.services.static_files import save_file, delete_file, get_url_by_path
 
 CREATE_MEDIA_QUERY = """
     INSERT INTO media (media_type, file_path, user_id)
-    VALUES (:media_type, :file_path, :user_id), 
+    VALUES (:media_type, :file_path, :user_id)
     RETURNING id, media_type, file_path, user_id;
 """
 
@@ -29,10 +30,22 @@ GET_MEDIA_BY_ID_QUERY = """
 """
 
 class MediaRepository(BaseRepository):
-    async def create_media(self, *, media_create: MediaCreate) -> MediaInDB:
-        created_media = await self.db.fetch_one(query=CREATE_MEDIA_QUERY, values=media_create.dict())
+    async def upload_media(self, *, media_upload: MediaUpload) -> MediaInDB:
 
-        return created_media
+        file_path = await save_file(
+                file_type=FileType.media,
+                media_type=media_upload.media_type,
+                upload=media_upload.file)
+
+        if media_upload.media_type == MediaType.avatar:
+            prev_avatar = await self.get_user_avatar(user_id=media_upload.user_id)
+            if prev_avatar:
+                await self.delete_media(id=prev_avatar.id)
+
+        created_media = await self.db.fetch_one(query=CREATE_MEDIA_QUERY, 
+                values=media_upload.copy(exclude={'file'}, update={'file_path': file_path}).dict())
+
+        return MediaInDB(**created_media)
 
     async def get_media_by_user_id_media_type(self, *, 
             user_id: int, media_type: MediaType) -> List[MediaInDB]:
@@ -60,10 +73,17 @@ class MediaRepository(BaseRepository):
             await self.db.execute(query=DELETE_MEDIA_QUERY, values={"id": id})
             delete_file(media_record.file_path)
 
-    async def get_user_avatar_url(self, *, user_id) -> str:
+    async def get_user_avatar(self, *, user_id: int) -> MediaInDB:
         media_records = await self.get_media_by_user_id_media_type(user_id=user_id, media_type=MediaType.avatar)
         if media_records:
-            return get_url_by_path(media_records[0]['file_path'])
+            return media_records[0]
+
+        return None
+
+    async def get_user_avatar_url(self, *, user_id) -> str:
+        avatar = await self.get_user_avatar(user_id=user_id)
+        if avatar:
+            return get_url_by_path(avatar.file_path)
 
         return None
 
