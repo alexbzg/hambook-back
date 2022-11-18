@@ -3,11 +3,12 @@ import uuid
 import os
 import os.path
 
+from pydantic import HttpUrl
 import aiofiles
 
 from app.models.core import FileType
 from app.models.media import MediaType
-from app.core.config import STATIC_WWW_ROOT
+from app.core.config import STATIC_WWW_ROOT, SRV_URI
 
 def get_directory(*,
     file_type: FileType,
@@ -42,6 +43,8 @@ def open_file(path: str, mode: str) -> aiofiles.base.AiofilesContextManager:
     path = full_path(path)
     return aiofiles.open(path, mode)
 
+def get_url_by_path(path: str) -> HttpUrl:
+    return HttpUrl(f"{SRV_URI}{path}")
     
 
 

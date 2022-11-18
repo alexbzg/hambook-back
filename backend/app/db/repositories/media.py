@@ -3,7 +3,7 @@ from typing import List
 from app.db.repositories.base import BaseRepository
 from app.models.media import MediaCreate, MediaInDB, MediaType
 from app.models.user import UserInDB
-from app.services.static_files import delete_file
+from app.services.static_files import delete_file, get_url_by_path
 
 CREATE_MEDIA_QUERY = """
     INSERT INTO media (media_type, file_path, user_id)
@@ -55,9 +55,16 @@ class MediaRepository(BaseRepository):
 
 
     async def delete_media(self, *, id: int) -> None:
-        media_record = self.get_media_by_id(id=id)
+        media_record = await self.get_media_by_id(id=id)
         if media_record:
             await self.db.execute(query=DELETE_MEDIA_QUERY, values={"id": id})
             delete_file(media_record.file_path)
+
+    async def get_user_avatar_url(self, *, user_id) -> str:
+        media_records = await self.get_media_by_user_id_media_type(user_id=user_id, media_type=MediaType.avatar)
+        if media_records:
+            return get_url_by_path(media_records[0]['file_path'])
+
+        return None
 
 

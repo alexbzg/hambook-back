@@ -1,5 +1,7 @@
-from typing import Optional
+from typing import Optional, Union
 from datetime import date
+
+from pydantic import HttpUrl
 
 from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, Callsign, Phone
 
@@ -7,7 +9,6 @@ class ProfileBase(CoreModel):
     full_name: Optional[str]
     address: Optional[str]
     phone: Optional[Phone]
-    default_image: Optional[str]
     current_callsign: Optional[Callsign]
     prev_callsigns: Optional[str]
     birthdate: Optional[date]
@@ -31,5 +32,5 @@ class ProfileInDB(IDModelMixin, DateTimeModelMixin, ProfileBase):
     user_id: int
 
 class ProfilePublic(ProfileInDB):
-    pass
+    avatar_url: Union[HttpUrl, None]
 

@@ -18,13 +18,17 @@ class TestProfilesRoutes:
     Ensure that no api route returns a 404
     """
 
-    async def test_routes_exist(self, app: FastAPI, client: TestClient, test_user: UserInDB) -> None:
+    async def test_routes_exist(self, 
+            app: FastAPI, 
+            client: TestClient, 
+            test_user: UserInDB,
+            test_user_callsign: str) -> None:
         # Get profile by username
         res = await client.get(app.url_path_for("profiles:get-profile-by-user_id", user_id=test_user.id))
         assert res.status_code != status.HTTP_404_NOT_FOUND
 
-        #res = await client.get(app.url_path_for("profiles:get-profile-by-callsign", callsign="r7cl"))
-        #assert res.status_code != status.HTTP_404_NOT_FOUND
+        res = await client.get(app.url_path_for("profiles:get-profile-by-callsign", callsign=test_user_callsign))
+        assert res.status_code != status.HTTP_404_NOT_FOUND
 
         # Update own profile
         res = await client.put(app.url_path_for("profiles:update-own-profile"), json={"profile_update": {}})

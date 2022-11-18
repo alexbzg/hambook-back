@@ -11,13 +11,20 @@ import alembic
 from alembic.config import Config
 
 from app.models.user import UserCreate, UserInDB
+from app.models.profile import ProfileUpdate
 from app.db.repositories.users import UsersRepository
+from app.db.repositories.profiles import ProfilesRepository
+
 from app.core.config import SECRET_KEY, JWT_TOKEN_PREFIX
 from app.services import auth_service
 
 @pytest.fixture
 def test_user_password_plain() -> str:
     return "12345678"
+
+@pytest.fixture
+def test_user_callsign() -> str:
+    return "TE1ST"
 
 # Make requests in our tests
 @pytest.fixture
@@ -60,7 +67,7 @@ def db(app: FastAPI) -> Database:
     return app.state._db
 
 @pytest.fixture
-async def test_user(db: Database, test_user_password_plain: str) -> UserInDB:
+async def test_user(db: Database, test_user_password_plain: str, test_user_callsign: str) -> UserInDB:
     new_user = UserCreate(
         email="alexbzg@gmail.com",
         password=test_user_password_plain
@@ -69,6 +76,11 @@ async def test_user(db: Database, test_user_password_plain: str) -> UserInDB:
     existing_user = await user_repo.get_user_by_email(email=new_user.email, populate=False)
     if existing_user:
         return existing_user
-    return await user_repo.register_new_user(new_user=new_user)
+    profile_repo = ProfilesRepository(db)
+    test_user = await user_repo.register_new_user(new_user=new_user)
+    await profile_repo.update_profile(
+            requesting_user=test_user, 
+            profile_update=ProfileUpdate(current_callsign=test_user_callsign))
+    return test_user
 
 
