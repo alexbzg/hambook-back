@@ -50,7 +50,7 @@ async def delete_media(*,
 
     if not media_record:
         raise HTTPException(
-            status_code=HTTP_400_BAD_REQUEST,
+            status_code=HTTP_404_NOT_FOUND,
             detail="Media not found"
         )
 
@@ -61,7 +61,7 @@ async def delete_media(*,
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    media_repo.delete_media(id=media_id)
+    await media_repo.delete_media(id=media_id)
 
     return {"result": "Ok"}
 
