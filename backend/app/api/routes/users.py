@@ -10,6 +10,7 @@ from starlette.status import (
 )
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import EmailStr, constr
+from aiosmtplib.errors import SMTPRecipientsRefused
 
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.auth import get_current_active_user, get_user_from_token
@@ -31,15 +32,20 @@ async def register_new_user(
 ) -> UserPublic:
     created_user = await user_repo.register_new_user(new_user=new_user)
 
-    await send_email_verification(user=created_user)
+    try:
+        await send_email_verification(user=created_user)
+    except SMTPRecipientsRefused:
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST,
+            detail="The email address is invalid."
+        )
 
-    return get_user_public(created_user)
-
-def get_user_public(user: UserInDB) -> UserPublic:
-    access_token = AccessToken(
-        access_token=auth_service.create_access_token_for_user(user=user), token_type="bearer"
+    created_user.access_token = AccessToken(
+        access_token=auth_service.create_access_token_for_user(user=created_user), 
+        token_type="bearer"
     )
-    return UserPublic(**user.dict(exclude={'access_token'}), access_token=access_token)
+
+    return created_user
 
 @router.post("/login/token/", response_model=AccessToken, name="users:login-email-and-password")
 async def user_login_with_email_and_password(
@@ -139,7 +145,7 @@ async def password_reset_request(
    
     return {'result': 'Ok'}
 
-@router.post("/password_reset", response_model=UserPublic, name="users:password-reset")
+@router.post("/password_reset", response_model=dict, name="users:password-reset")
 async def password_reset(
     password_reset: UserPasswordReset = Body(..., embed=True),
     user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
@@ -164,6 +170,6 @@ async def password_reset(
     if not user.email_verified:
         user = await user_repo.verify_user_email(userid=userid)
 
-    return get_user_public(user)
+    return {'result': 'Ok'}
     
 

@@ -10,7 +10,7 @@ from app.api.dependencies.auth import get_current_active_user
 from app.api.dependencies.database import get_repository
 from app.models.media import MediaUpload, MediaInDB, MediaPublic, MediaType
 from app.models.user import UserInDB
-from app.db.repositories.media import MediaRepository
+from app.db.repositories.media import MediaRepository, mediaPublicFromDB
 from app.services.static_files import get_url_by_path
 
 import logging
@@ -80,7 +80,5 @@ async def media_query(*,
             detail="Media not found"
         )
 
-    return [MediaPublic(**media.copy(
-        exclude={'file_path'},
-        update={'url': get_url_by_path(media.file_path)}).dict()) for media in media_records]
+    return [mediaPublicFromDB(media) for media in media_records]
 

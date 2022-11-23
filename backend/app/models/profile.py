@@ -1,9 +1,10 @@
-from typing import Optional, Union
+from typing import Optional, Union, List
 from datetime import date
 
 from pydantic import HttpUrl
 
 from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, Callsign, Phone
+from app.models.media import MediaPublic
 
 class ProfileBase(CoreModel):
     full_name: Optional[str]
@@ -33,5 +34,6 @@ class ProfileInDB(IDModelMixin, DateTimeModelMixin, ProfileBase):
 
 class ProfilePublic(ProfileInDB):
     user_id: str
-    avatar_url: Union[HttpUrl, None]
+    avatar: Union[MediaPublic, None]
+    media: List[MediaPublic]
 

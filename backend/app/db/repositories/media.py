@@ -2,7 +2,7 @@ from typing import List
 import logging
 
 from app.db.repositories.base import BaseRepository
-from app.models.media import MediaUpload, MediaInDB, MediaType
+from app.models.media import MediaUpload, MediaInDB, MediaPublic, MediaType
 from app.models.user import UserInDB
 from app.models.core import FileType
 from app.services.static_files import save_file, delete_file, get_url_by_path
@@ -29,6 +29,11 @@ GET_MEDIA_BY_ID_QUERY = """
     FROM media
     WHERE id = :id;
 """
+
+def mediaPublicFromDB(media: MediaInDB) -> MediaPublic:
+    return MediaPublic(**media.copy(
+        exclude={'file_path'},
+        update={'url': get_url_by_path(media.file_path)}).dict())
 
 class MediaRepository(BaseRepository):
     async def upload_media(self, *, media_upload: MediaUpload) -> MediaInDB:

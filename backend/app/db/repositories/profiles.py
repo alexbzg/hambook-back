@@ -1,9 +1,10 @@
 from databases import Database
 
 from app.db.repositories.base import BaseRepository
-from app.db.repositories.media import MediaRepository
+from app.db.repositories.media import MediaRepository, mediaPublicFromDB
 from app.models.profile import ProfileCreate, ProfileUpdate, ProfileInDB, ProfilePublic
 from app.models.user import UserInDB
+from app.models.media import MediaType
 
 
 CREATE_PROFILE_FOR_USER_QUERY = """
@@ -56,7 +57,7 @@ class ProfilesRepository(BaseRepository):
         return await self.populate_profile(profile=ProfileInDB(**created_profile))
 
     async def get_profile_by_user_id(self, *, user_id: int, populate: bool = True) -> ProfilePublic:
-        profile_record = await self.db.fetch_one(query=GET_PROFILE_BY_USER_ID_QUERY, values={"user_id": user_id})
+        profile_record = await self.db.fetch_one(query=GET_PROFILE_BY_USER_ID_QUERY, values={"user_id": int(user_id)})
 
         if not profile_record:
             return None
@@ -90,6 +91,10 @@ class ProfilesRepository(BaseRepository):
 
     async def populate_profile(self, *, profile: ProfileInDB) -> ProfilePublic:
 
-        avatar_url = await self.media_repo.get_user_avatar_url(user_id=profile.user_id)
+        avatar_record = await self.media_repo.get_user_avatar(user_id=profile.user_id)
+        avatar = mediaPublicFromDB(avatar_record) if avatar_record else None
+        profile_media_records = await self.media_repo.get_media_by_user_id_media_type(user_id=profile.user_id,
+                media_type=MediaType.profile_media)
+        profile_media = [mediaPublicFromDB(media) in profile_media_records] if profile_media_records else []
 
-        return ProfilePublic(**profile.dict(), avatar_url=avatar_url)
+        return ProfilePublic(**profile.dict(), avatar=avatar, media=profile_media)

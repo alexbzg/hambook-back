@@ -8,6 +8,7 @@ from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel
 
 class MediaType(IntEnum):
     avatar = 1
+    profile_media = 2
 
 class MediaBase(CoreModel):
     user_id: int
@@ -42,4 +43,5 @@ class MediaInDB(IDModelMixin, DateTimeModelMixin, MediaCreate):
 class MediaPublic(IDModelMixin, DateTimeModelMixin, MediaBase):
     user_id: str
     url: HttpUrl
+
 
