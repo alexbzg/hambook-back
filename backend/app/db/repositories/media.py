@@ -1,11 +1,12 @@
 from typing import List
 import logging
+from PIL import Image
 
 from app.db.repositories.base import BaseRepository
 from app.models.media import MediaUpload, MediaInDB, MediaPublic, MediaType
 from app.models.user import UserInDB
 from app.models.core import FileType
-from app.services.static_files import save_file, delete_file, get_url_by_path
+from app.services.static_files import save_file, delete_file, get_url_by_path, full_path
 
 CREATE_MEDIA_QUERY = """
     INSERT INTO media (media_type, file_path, user_id)
@@ -47,6 +48,14 @@ class MediaRepository(BaseRepository):
             prev_avatar = await self.get_user_avatar(user_id=media_upload.user_id)
             if prev_avatar:
                 await self.delete_media(id=prev_avatar.id)
+
+            #crop avatar image to square
+            image_path = full_path(file_path)
+            image = Image.open(image_path)
+            if image.size[0] != image.size[1]:
+                dm = min(image.size)
+                image = image.crop((0, 0, dm, dm))
+                image.save(image_path)
 
         created_media = await self.db.fetch_one(query=CREATE_MEDIA_QUERY, 
                 values=media_upload.copy(exclude={'file'}, update={'file_path': file_path}).dict())

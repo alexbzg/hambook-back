@@ -39,7 +39,7 @@ async def upload_media(*,
         exclude={'file_path'},
         update={'url': get_url_by_path(created_media.file_path)}).dict())
 
-@router.delete("/", response_model=dict, name="media:delete")
+@router.delete("/{media_id}", response_model=dict, name="media:delete")
 async def delete_media(*,
     media_id: int,
 	current_user: UserInDB = Depends(get_current_active_user),
