@@ -23,9 +23,18 @@ depends_on = None
 
 
 def upgrade() -> None:
+    op.execute(sa.text("""CREATE SEQUENCE IF NOT EXISTS public.media_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;"""))
+
     op.create_table(
         "media",
-        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("id", sa.BigInteger, primary_key=True, 
+            server_default=sa.text("generate_id('media_id_sec'::text')"),
+            autoincrement=False),
         sa.Column("media_type", sa.SmallInteger),
         sa.Column("file_path", sa.VARCHAR(512), nullable=False),
         sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE")),
@@ -33,5 +42,6 @@ def upgrade() -> None:
     )
 
 def downgrade() -> None:
+ 	op.execute("""DROP SEQUENCE if exists public.user_id_sec;""")
     op.execute("drop table if exists media;")
 

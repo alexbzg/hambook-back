@@ -23,9 +23,19 @@ depends_on = None
 
 
 def upgrade() -> None:
+    op.execute(sa.text("""CREATE SEQUENCE IF NOT EXISTS public.profile_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;"""))
+
+
     op.create_table(
         "profiles",
-        sa.Column("id", sa.Integer, primary_key=True),
+        sa.Column("id", sa.BigInteger, primary_key=True, 
+            server_default=sa.text("generate_id('profile_id_sec'::text')"),
+            autoincrement=False),
         sa.Column("full_name", sa.VARCHAR(256), nullable=True),
         sa.Column("address", sa.VARCHAR(512), nullable=True),
         sa.Column("phone", sa.CHAR(12), nullable=True),
@@ -48,7 +58,7 @@ def upgrade() -> None:
     )
 
 def downgrade() -> None:
-
- op.execute("drop table if exists profiles;")
+    op.execute("""DROP SEQUENCE if exists public.profiles_id_sec;""")
+    op.execute("drop table if exists profiles;")
 
 

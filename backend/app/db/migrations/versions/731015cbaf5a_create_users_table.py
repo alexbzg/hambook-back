@@ -9,29 +9,16 @@ from typing import Tuple
 from alembic import op
 import sqlalchemy as sa
 
+import sys, pathlib
+sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
+from common import timestamps
+
+
 # revision identifiers, used by Alembic
 revision = '731015cbaf5a'
 down_revision = None
 branch_labels = None
 depends_on = None
-
-def timestamps(indexed: bool = False) -> Tuple[sa.Column, sa.Column]:
-    return (
-        sa.Column(
-            "created_at",
-            sa.TIMESTAMP(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-            index=indexed,
-        ),
-        sa.Column(
-            "updated_at",
-            sa.TIMESTAMP(timezone=True),
-            server_default=sa.func.now(),
-            nullable=False,
-            index=indexed,
-        ),
-    )
 
 def create_users_table() -> None:
 
@@ -48,14 +35,15 @@ def create_users_table() -> None:
         """
     ))
 
-    op.execute(sa.text("""CREATE SEQUENCE IF NOT EXISTS public.user_id_sec
+    op.execute(sa.text("""CREATE SEQUENCE IF NOT EXISTS public.user_id_seq
     INCREMENT 1
     START 1
     MINVALUE 1
     MAXVALUE 9223372036854775807
     CACHE 1;"""))
 
-    op.execute(sa.text("""CREATE OR REPLACE FUNCTION public.generate_user_id(
+    op.execute(sa.text("""
+CREATE OR REPLACE FUNCTION public.generate_id(seq_name text,
 	OUT result bigint)
     RETURNS bigint
     LANGUAGE 'plpgsql'
@@ -67,7 +55,7 @@ DECLARE
     seq_id bigint;
     now_millis bigint;
 BEGIN
-    SELECT nextval('user_id_sec') % 1024 INTO seq_id;
+    SELECT nextval(seq_name) % 1024 INTO seq_id;
     SELECT FLOOR(EXTRACT(EPOCH FROM clock_timestamp()) * 1000) INTO now_millis;
     result := (now_millis - our_epoch) << 23;
     result := result | (seq_id);
@@ -78,7 +66,8 @@ $BODY$;
 
     op.create_table(
         "users",
-        sa.Column("id", sa.BigInteger, primary_key=True, server_default=sa.text("generate_user_id()"),
+        sa.Column("id", sa.BigInteger, primary_key=True, 
+            server_default=sa.text("generate_id('user_id_seq'::text')"),
             autoincrement=False),
         sa.Column("email", sa.VARCHAR(64), nullable=False, unique=True),
         sa.Column("email_verified", sa.Boolean, nullable=False, server_default=sa.text('false')),
@@ -105,7 +94,7 @@ def downgrade() -> None:
 
 	op.execute("drop table if exists users;")
 	op.execute("""DROP FUNCTION public.generate_user_id();""")
-	op.execute("""DROP SEQUENCE public.user_id_sec;""")
+	op.execute("""DROP SEQUENCE public.user_id_seq;""")
 	op.execute("DROP FUNCTION update_updated_at_column")	
    
 
