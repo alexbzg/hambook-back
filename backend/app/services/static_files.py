@@ -7,6 +7,8 @@ from fastapi import UploadFile
 from pydantic import HttpUrl
 import aiofiles
 
+import logging
+
 from app.models.core import FileType
 from app.models.media import MediaType
 from app.core.config import STATIC_WWW_ROOT, SRV_URI

@@ -33,7 +33,7 @@ def upgrade() -> None:
     op.create_table(
         "media",
         sa.Column("id", sa.BigInteger, primary_key=True, 
-            server_default=sa.text("generate_id('media_id_sec'::text')"),
+            server_default=sa.text("generate_id('media_id_sec'::text)"),
             autoincrement=False),
         sa.Column("media_type", sa.SmallInteger),
         sa.Column("file_path", sa.VARCHAR(512), nullable=False),
@@ -42,6 +42,5 @@ def upgrade() -> None:
     )
 
 def downgrade() -> None:
- 	op.execute("""DROP SEQUENCE if exists public.user_id_sec;""")
+    op.execute("""DROP SEQUENCE if exists public.user_id_sec;""")
     op.execute("drop table if exists media;")
-

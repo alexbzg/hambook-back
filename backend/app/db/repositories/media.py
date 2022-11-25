@@ -67,8 +67,6 @@ class MediaRepository(BaseRepository):
         media_records = await self.db.fetch_all(query=GET_MEDIA_BY_USER_ID_MEDIA_TYPE_QUERY, 
                 values={"user_id": user_id, "media_type": media_type})
 
-        logging.info(f"{user_id} {media_type} {media_records}")
-
         if not media_records:
             return None
 
