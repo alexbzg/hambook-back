@@ -55,6 +55,7 @@ class TestUserRegistration:
         assert user_in_db.email == new_user["email"]
         # check that the user returned in the response is equal to the user in the database
         created_user = UserPublic(**res.json()).dict(exclude={"access_token", "created_at", "updated_at", "profile"})
+        created_user["id"] = int(created_user["id"])
         assert created_user == user_in_db.dict(exclude={"password", "salt", "created_at", "updated_at"})
     @pytest.mark.parametrize(
         "attr, value, status_code",
@@ -259,7 +260,7 @@ class TestUserMe:
         assert res.status_code == HTTP_200_OK
         user = UserPublic(**res.json())
         assert user.email == test_user.email
-        assert user.id == test_user.id
+        assert int(user.id) == int(test_user.id)
 
     async def test_user_cannot_access_own_data_if_not_authenticated(
         self, app: FastAPI, client: TestClient, test_user: UserInDB,

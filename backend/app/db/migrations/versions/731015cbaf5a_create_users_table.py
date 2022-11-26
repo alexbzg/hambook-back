@@ -67,7 +67,7 @@ $BODY$;
     op.create_table(
         "users",
         sa.Column("id", sa.BigInteger, primary_key=True, 
-            server_default=sa.text("generate_id('user_id_seq'::text')"),
+            server_default=sa.text("generate_id('user_id_seq'::text)"),
             autoincrement=False),
         sa.Column("email", sa.VARCHAR(64), nullable=False, unique=True),
         sa.Column("email_verified", sa.Boolean, nullable=False, server_default=sa.text('false')),

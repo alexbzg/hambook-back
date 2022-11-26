@@ -33,7 +33,7 @@ def upgrade() -> None:
     op.create_table(
         "media",
         sa.Column("id", sa.BigInteger, primary_key=True, 
-            server_default=sa.text("generate_id('media_id_sec'::text)"),
+            server_default=sa.text("generate_id('media_id_seq'::text)"),
             autoincrement=False),
         sa.Column("media_type", sa.SmallInteger),
         sa.Column("file_path", sa.VARCHAR(512), nullable=False),

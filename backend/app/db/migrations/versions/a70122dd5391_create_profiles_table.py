@@ -34,7 +34,7 @@ def upgrade() -> None:
     op.create_table(
         "profiles",
         sa.Column("id", sa.BigInteger, primary_key=True, 
-            server_default=sa.text("generate_id('profile_id_sec'::text')"),
+            server_default=sa.text("generate_id('profile_id_seq'::text)"),
             autoincrement=False),
         sa.Column("full_name", sa.VARCHAR(256), nullable=True),
         sa.Column("address", sa.VARCHAR(512), nullable=True),

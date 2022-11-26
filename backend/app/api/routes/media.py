@@ -3,6 +3,7 @@ from typing import List
 from fastapi import Depends, APIRouter, HTTPException, Path, Body, Form, status, UploadFile, File
 from pydantic import ValidationError
 from starlette.status import (
+        HTTP_201_CREATED, 
         HTTP_400_BAD_REQUEST, 
         HTTP_401_UNAUTHORIZED, 
         HTTP_404_NOT_FOUND )
@@ -17,7 +18,7 @@ import logging
 
 router = APIRouter()
 
-@router.post("/", response_model=MediaPublic, name="media:upload")
+@router.post("/", response_model=MediaPublic, name="media:upload",  status_code=HTTP_201_CREATED)
 async def upload_media(*,
     media_type: MediaType = Form(...),
     file: UploadFile = File(...),
