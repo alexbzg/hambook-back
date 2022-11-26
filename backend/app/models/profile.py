@@ -33,6 +33,7 @@ class ProfileInDB(IDModelMixin, DateTimeModelMixin, ProfileBase):
     user_id: int
 
 class ProfilePublic(ProfileInDB):
+    id: str
     user_id: str
     avatar: Union[MediaPublic, None]
     media: List[MediaPublic]

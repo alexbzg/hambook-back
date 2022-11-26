@@ -34,6 +34,7 @@ def upgrade() -> None:
         sa.Column("id", sa.BigInteger, primary_key=True, 
             server_default=sa.text("generate_id('qso_log_id_sec'::text)"),
             autoincrement=False),
+        sa.Column("callsign", sa.Text, nullable=False),
         sa.Column("desc", sa.Text),
         sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE")),
         *timestamps()

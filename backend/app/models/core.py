@@ -4,6 +4,9 @@ from pydantic import BaseModel, validator, constr
 from enum import IntEnum
 
 Callsign = constr(regex=r"[a-zA-Z]{1,4}\d{1,3}[a-zA-Z]{1,4}", to_upper=True, strip_whitespace=True)
+FullCallsign = constr(regex=r"([A-Za-z\d]{1,3}/)*[a-zA-Z]{1,4}\d{1,3}[a-zA-Z]{1,4}(/[A-Za-z\d]{1,3})*",
+        to_upper=True, strip_whitespace=True)
+
 Phone = constr(regex=r"\+\d{11}", strip_whitespace=True)
 
 class FileType(IntEnum):

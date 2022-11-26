@@ -40,7 +40,8 @@ class MediaDelete(IDModelMixin):
 class MediaInDB(IDModelMixin, DateTimeModelMixin, MediaCreate):
     pass
 
-class MediaPublic(IDModelMixin, DateTimeModelMixin, MediaBase):
+class MediaPublic(DateTimeModelMixin, MediaBase):
+    id: str
     user_id: str
     url: HttpUrl
 
