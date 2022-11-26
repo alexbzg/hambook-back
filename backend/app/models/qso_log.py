@@ -1,19 +1,15 @@
+from typing import Optional
 from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, FullCallsign
 
 class QsoLogBase(CoreModel):
-    user_id: int
-    callsign: FullCallsign
-    desc: str
-
-class QsoLogUpdate(IDModelMixin, QsoLogBase):
     """
-    Allow users to update their logs
+    Used for create/update log requests also as user_id is passed through auth header
     """
-    pass
+    callsign: Optional[FullCallsign]
+    description: Optional[str]
 
 class QsoLogInDB(IDModelMixin, DateTimeModelMixin, QsoLogBase):
-    pass
-
+    user_id: int
 
 class QsoLogPublic(QsoLogInDB):
     id: str

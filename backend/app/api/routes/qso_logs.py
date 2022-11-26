@@ -7,7 +7,8 @@ from starlette.status import (
         HTTP_404_NOT_FOUND )
 from app.api.dependencies.auth import get_current_active_user
 from app.api.dependencies.database import get_repository
-from app.models.qso_log import QsoLogBase, QsoLogInDB, QsoLogPublic, QsoLogUpdate
+from app.api.dependencies.qso_logs import get_qso_log_for_update
+from app.models.qso_log import QsoLogBase, QsoLogInDB, QsoLogPublic
 from app.models.user import UserInDB
 from app.db.repositories.qso_logs import QsoLogsRepository
 
@@ -22,71 +23,42 @@ async def create_qso_log(*,
 	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
 ) -> QsoLogPublic:
 
-    created_log = await qso_logs_repo.create_qso_log(new_log=new_log)
+    created_log = await qso_logs_repo.create_log(new_log=new_log, requesting_user=current_user)
 
-    return QsoLogPublic(**created_log)
+    return QsoLogPublic(**created_log.dict())
 
 @router.delete("/{log_id}", response_model=dict, name="qso-logs:delete-log")
 async def delete_qso_log(*,
     log_id: int,
 	current_user: UserInDB = Depends(get_current_active_user),
 	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
+    qso_log: QsoLogInDB = Depends(get_qso_log_for_update)
 ) -> dict:
 
-    log_record = await qso_logs_repo.get_log_by_id(id=log_id)
-
-    if not log_record:
-        raise HTTPException(
-            status_code=HTTP_404_NOT_FOUND,
-            detail="Qso log not found"
-        )
-
-    if int(log_record.user_id) != int(current_user.id):
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Not authorized",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
     await qso_logs_repo.delete_log(id=log_id)
 
     return {"result": "Ok"}
 
-@router.put("/", response_model=QsoLogPublic, name="qso-logs:update-log")
+@router.put("/{log_id}", response_model=QsoLogPublic, name="qso-logs:update-log")
 async def update_qso_log(*,
-    log_update: QsoLogUpdate = Body(..., embed=True),
+    log_update: QsoLogBase = Body(..., embed=True),
 	current_user: UserInDB = Depends(get_current_active_user),
-	qso_log_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
+	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
+    qso_log: QsoLogInDB = Depends(get_qso_log_for_update)
 ) -> QsoLogPublic:
 
-    log_record = await qso_logs_repo.get_log_by_id(id=log_update.id)
+    updated_log = await qso_logs_repo.update_log(log=qso_log, log_update=log_update)
 
-    if not log_record:
-        raise HTTPException(
-            status_code=HTTP_404_NOT_FOUND,
-            detail="Qso log not found"
-        )
-
-    if int(log_record.user_id) != int(current_user.id):
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Not authorized",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-
-    updated_log = await qso_logs_repo.update_log(log_update=log_update)
-
-    return QsoLogPublic(**updated_log)
+    return QsoLogPublic(**updated_log.dict())
 
 
 @router.get("/{user_id}", response_model=List[QsoLogPublic], name="qso-logs:query-by-user")
-async def media_query(*,
+async def qso_log_query_by_user(*,
     user_id: int,
-	qso_log_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
+	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
 ) -> List[QsoLogPublic]:
 
-    logs = await qso_log_repo.get_log_by_user_id(user_id=user_id)
+    logs = await qso_logs_repo.get_logs_by_user_id(user_id=user_id)
 
     if not logs:
         raise HTTPException(
@@ -94,15 +66,15 @@ async def media_query(*,
             detail="Qso logs not found"
         )
 
-    return [QsoLogPublicFromDB(record) for log in logs]
+    return [QsoLogPublic(**log.dict()) for log in logs]
 
 @router.get("/", response_model=QsoLogPublic, name="qso-logs:query-by-log-id")
-async def media_query(*,
+async def qso_log_by_id(*,
     log_id: int,
-	qso_log_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
+	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
 ) -> List[QsoLogPublic]:
 
-    log = await qso_log_repo.get_log_by_id(id=log_id)
+    log = await qso_logs_repo.get_log_by_id(id=log_id)
 
     if not log:
         raise HTTPException(
@@ -110,6 +82,6 @@ async def media_query(*,
             detail="Qso log not found"
         )
 
-    return QsoLogPublicFromDB(log)
+    return QsoLogPublic(**log.dict())
 
 
