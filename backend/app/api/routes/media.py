@@ -9,6 +9,7 @@ from starlette.status import (
         HTTP_404_NOT_FOUND )
 from app.api.dependencies.auth import get_current_active_user
 from app.api.dependencies.database import get_repository
+from app.api.dependencies.media import get_media_for_update
 from app.models.media import MediaUpload, MediaInDB, MediaPublic, MediaType
 from app.models.user import UserInDB
 from app.db.repositories.media import MediaRepository, mediaPublicFromDB
@@ -45,23 +46,9 @@ async def delete_media(*,
     media_id: int,
 	current_user: UserInDB = Depends(get_current_active_user),
 	media_repo: MediaRepository = Depends(get_repository(MediaRepository)),    
+    media: MediaInDB = Depends(get_media_for_update)
 ) -> dict:
 
-    media_record = await media_repo.get_media_by_id(id=media_id)
-
-    if not media_record:
-        raise HTTPException(
-            status_code=HTTP_404_NOT_FOUND,
-            detail="Media not found"
-        )
-
-    if int(media_record.user_id) != int(current_user.id):
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Not authorized",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
     await media_repo.delete_media(id=media_id)
 
     return {"result": "Ok"}

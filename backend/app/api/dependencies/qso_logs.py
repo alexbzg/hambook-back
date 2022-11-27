@@ -21,9 +21,8 @@ async def get_qso_log_for_update(log_id: int,
 
     if int(log.user_id) != int(current_user.id):
         raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED,
-            detail="Not authorized",
-            headers={"WWW-Authenticate": "Bearer"},
+            status_code=HTTP_403_FORBIDDEN,
+            detail="Permission denied"
         )
 
     return log

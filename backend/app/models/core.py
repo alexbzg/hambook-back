@@ -29,3 +29,10 @@ class DateTimeModelMixin(BaseModel):
 class IDModelMixin(BaseModel):
     id: int
 
+
+class IDStrModelMixin(BaseModel):
+    """
+    id converted to str for json output because json mangles bigints
+    """
+    id: str
+

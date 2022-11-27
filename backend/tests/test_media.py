@@ -1,7 +1,11 @@
+from os import path
+from typing import Callable
+
 import pytest
 
 from fastapi import FastAPI, status
 from async_asgi_testclient import TestClient
+from async_asgi_testclient.response import Response
 
 from databases import Database
 from app.models.user import UserInDB, UserPublic
@@ -9,30 +13,49 @@ from app.models.media import MediaInDB, MediaPublic, MediaType
 from app.db.repositories.media import MediaRepository
 from app.db.repositories.profiles import ProfilesRepository
 
-
 pytestmark = pytest.mark.asyncio
 
+async def upload_media_helper(*, 
+        app: FastAPI,
+        client: TestClient,
+        media_type: MediaType,
+        file_path: str) -> Response:
+    with open(file_path, 'rb') as file:
+        file_name = path.basename(file_path)
+        return await client.post(app.url_path_for("media:upload"), 
+            headers={"content-type": "multipart/form-data"},
+            files={
+                "media_type": str(int(media_type)),
+                "file": (file_name, file,'image/jpeg')
+                }
+        )
+
+@pytest.fixture
+async def avatar_upload(
+        app: FastAPI,
+        db: Database, 
+        test_user: UserInDB,
+        authorized_client: TestClient) -> MediaPublic:
+    res = await upload_media_helper(
+            app=app, 
+            client=authorized_client,
+            media_type=MediaType.avatar,
+            file_path='/backend/tests/files/user.jpg') 
+    return MediaPublic(**res.json())
 
 class TestMediaUpload:
     async def test_user_can_upload_media(self, *,
         app: FastAPI, 
         authorized_client: TestClient,
         test_user: UserInDB,
-        db: Database) -> None:
+        db: Database,
+        avatar_upload: MediaPublic) -> None:
+
         media_repo = MediaRepository(db)
-        with open('/backend/tests/files/user.jpg', 'rb') as file:
-            res = await authorized_client.post(app.url_path_for("media:upload"), 
-                headers={"content-type": "multipart/form-data"},
-                files={
-                    "media_type": str(int(MediaType.avatar)),
-                    "file": ("user.jpg", file,'image/jpeg')
-                    }
-            )
-        assert res.status_code == status.HTTP_201_CREATED
-        media = MediaPublic(**res.json())
-        media_in_db = await media_repo.get_media_by_id(id=int(media.id))
+        media_in_db = await media_repo.get_media_by_id(id=int(avatar_upload.id))
         assert media_in_db is not None
         assert media_in_db.user_id == int(test_user.id)
+        assert media_in_db.id == int(avatar_upload.id)
 
     async def test_unauthorized_user_can_not_upload_media(self, *,
         app: FastAPI, 
@@ -40,34 +63,33 @@ class TestMediaUpload:
         test_user: UserInDB,
         db: Database) -> None:
         media_repo = MediaRepository(db)
-        with open('/backend/tests/files/user.jpg', 'rb') as file:
-            res = await client.post(app.url_path_for("media:upload"), 
-                headers={"content-type": "multipart/form-data"},
-                files={
-                    "media_type": str(int(MediaType.avatar)),
-                    "file": ("user.jpg", file,'image/jpeg')
-                    }
-            )
+
+        res = await upload_media_helper(
+                app=app, 
+                client=client,
+                media_type=MediaType.avatar,
+                file_path='/backend/tests/files/user.jpg') 
+       
         assert res.status_code == status.HTTP_401_UNAUTHORIZED
 
-    async def test_prev_avatar_is_deletes_after_new_upload(self, *,
+    async def test_prev_avatar_is_deleted_after_new_upload(self, *,
         app: FastAPI, 
         authorized_client: TestClient,
         test_user: UserInDB,
-        db: Database) -> None:
-        media_repo = MediaRepository(db)
-        
-        with open('/backend/tests/files/user.jpg', 'rb') as file:
-            res = await authorized_client.post(app.url_path_for("media:upload"), 
-                headers={"content-type": "multipart/form-data"},
-                files={
-                    "media_type": str(int(MediaType.avatar)),
-                    "file": ("user.jpg", file,'image/jpeg')
-                    }
-            )
+        db: Database,
+        avatar_upload: MediaPublic) -> None:
+
+        res = await upload_media_helper(
+                app=app, 
+                client=authorized_client,
+                media_type=MediaType.avatar,
+                file_path='/backend/tests/files/user.jpg') 
         assert res.status_code == status.HTTP_201_CREATED
-        media = MediaPublic(**res.json())
-        media_in_db = await media_repo.get_media_by_id(id=int(media.id))
+        new_avatar = MediaPublic(**res.json())
+        assert new_avatar.id != avatar_upload.id
+
+        media_repo = MediaRepository(db)
+        media_in_db = await media_repo.get_media_by_id(id=int(new_avatar.id))
         assert media_in_db.user_id == int(test_user.id)
         assert media_in_db is not None
         avatars_in_db = await media_repo.get_media_by_user_id_media_type(user_id=int(test_user.id), 
@@ -75,93 +97,80 @@ class TestMediaUpload:
         assert len(avatars_in_db) == 1
         assert avatars_in_db[0] == media_in_db
 
-
-# ...other code
-
-
-class TestProfileView:
-    async def test_can_view_users_profile(
-        self, app: FastAPI, client: TestClient, test_user: UserInDB) -> None:
-        res = await client.get(
-            app.url_path_for("profiles:get-profile-by-user_id", user_id=test_user.id)
-        )
-        assert res.status_code == status.HTTP_200_OK
-        profile = ProfilePublic(**res.json())
-        assert int(profile.user_id) == test_user.id
-
-    async def test_no_profile_is_returned_when_userid_matches_no_user(
-        self, app: FastAPI, client: TestClient
-    ) -> None:
-        res = await client.get(
-            app.url_path_for("profiles:get-profile-by-user_id", user_id="1234")
-        )
-        assert res.status_code == status.HTTP_404_NOT_FOUND          
-
-    async def test_no_profile_is_returned_when_callsign_matches_no_user(
-        self, app: FastAPI, client: TestClient
-    ) -> None:
-        res = await client.get(
-            app.url_path_for("profiles:get-profile-by-callsign", callsign="bad000cs")
-        )
-        assert res.status_code == status.HTTP_404_NOT_FOUND          
-
-
-
-class TestProfileManagement:
-
-
-    @pytest.mark.parametrize(
-        "attr, value",
-        (
-            ("full_name", "John Doe"),
-            ("address", "somewhere"),
-            ("bio", "This is a test bio"),
-			("current_callsign", "SM1CS"),
-			("prev_callsigns", "SM2CS SM3CS"),
-			("birthdate", '2019-12-04')
-        ),
-    )
-    async def test_user_can_update_own_profile(
-            self, 
-            app: FastAPI, 
-            authorized_client: TestClient, 
-            db: Database, 
-            test_user: UserInDB, 
-            attr: str, 
-            value: str,
-    ) -> None:
-        profiles_repo = ProfilesRepository(db)        
-        test_user_profile = await profiles_repo.get_profile_by_user_id(user_id=test_user.id)
-        assert getattr(test_user_profile, attr) != value
-        res = await authorized_client.put(
-            app.url_path_for("profiles:update-own-profile"), json={"profile_update": {attr: value}},
-        )
-        assert res.status_code == status.HTTP_200_OK
-        profile = ProfilePublic(**res.json())
-        if attr != 'birthdate':
-            assert getattr(profile, attr) == value
-
-
-    @pytest.mark.parametrize(
-        "attr, value, status_code",
-        (
-            ("full_name", [], 422),
-            ("bio", {}, 422),
-            ("current_callsign", "bad callsign", 422),
-        ),
-    )
-    async def test_user_recieves_error_for_invalid_update_params(
-        self, 
+class TestMediaDelete:
+    
+    async def test_user_can_delete_media(self, *,
         app: FastAPI, 
-        authorized_client: TestClient, 
-        test_user: UserInDB, 
-        attr: str, 
-        value: str, 
-        status_code: int,
-    ) -> None:
-        res = await authorized_client.put(
-            app.url_path_for("profiles:update-own-profile"), json={"profile_update": {attr: value}},
-        )
-        assert res.status_code == status_code
+        authorized_client: TestClient,
+        test_user: UserInDB,
+        db: Database,
+        avatar_upload: MediaPublic) -> None:
 
+        res = await authorized_client.delete(app.url_path_for("media:delete", 
+            media_id=avatar_upload.id)) 
 
+        assert res.status_code == status.HTTP_200_OK
+
+        media_repo = MediaRepository(db)
+        media_in_db = await media_repo.get_media_by_id(id=int(avatar_upload.id))
+        assert media_in_db is None
+
+        profiles_repo = ProfilesRepository(db)
+        test_user_profile = await profiles_repo.get_profile_by_user_id(user_id=test_user.id)
+        assert test_user_profile.avatar is None
+
+    async def test_user_cannot_delete_not_owned_media(self, *,
+        app: FastAPI,
+        authorized_client: TestClient,
+        test_user: UserInDB,
+        test_user2: UserInDB,
+        create_authorized_client: Callable,
+        db: Database,
+        avatar_upload: MediaPublic) -> None:
+
+        test_user2_client = create_authorized_client(user=test_user2)
+
+        res = await test_user2_client.delete(app.url_path_for("media:delete", 
+            media_id=avatar_upload.id)) 
+        assert res.status_code == status.HTTP_403_FORBIDDEN
+
+class TestMediaQuery:
+
+    async def test_media_query_existing(self, *,
+        app: FastAPI,
+        authorized_client: TestClient,
+        client: TestClient,
+        test_user: UserInDB,
+        test_user2: UserInDB,
+        db: Database,
+        avatar_upload: MediaPublic) -> None:
+
+        res = await client.get(app.url_path_for("media:query-by-user-and-type", 
+            user_id=test_user.id,
+            media_type=int(MediaType.avatar)))
+        assert res.status_code == status.HTTP_200_OK
+
+        medias = [MediaPublic(**item) for item in res.json()]
+        assert len(medias) == 1
+        assert (medias[0].dict(exclude={'created_at', 'updated_at'}) == 
+            avatar_upload.dict(exclude={'created_at', 'updated_at'}))
+
+    async def test_media_query_non_existing(self, *,
+        app: FastAPI,
+        authorized_client: TestClient,
+        client: TestClient,
+        test_user: UserInDB,
+        test_user2: UserInDB,
+        db: Database,
+        avatar_upload: MediaPublic) -> None:
+
+        res = await client.get(app.url_path_for("media:query-by-user-and-type", 
+            user_id=test_user2.id,
+            media_type=int(MediaType.avatar)))
+        assert res.status_code == status.HTTP_404_NOT_FOUND
+
+        res = await client.get(app.url_path_for("media:query-by-user-and-type", 
+            user_id=test_user2.id,
+            media_type=int(MediaType.profile_media)))
+        assert res.status_code == status.HTTP_404_NOT_FOUND
+       
