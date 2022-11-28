@@ -53,7 +53,7 @@ async def update_qso_log(*,
 
 
 @router.get("/{user_id}", response_model=List[QsoLogPublic], name="qso-logs:query-by-user")
-async def qso_log_query_by_user(*,
+async def qso_logs_query_by_user(*,
     user_id: int,
 	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
 ) -> List[QsoLogPublic]:
