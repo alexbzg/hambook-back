@@ -22,7 +22,8 @@ DELETE_MEDIA_QUERY = """
 GET_MEDIA_BY_USER_ID_MEDIA_TYPE_QUERY = """
     SELECT id, media_type, file_path, user_id
     FROM media
-    WHERE user_id = :user_id and media_type = :media_type;
+    WHERE user_id = :user_id and media_type = :media_type
+    ORDER BY id;
 """
 
 GET_MEDIA_BY_ID_QUERY = """

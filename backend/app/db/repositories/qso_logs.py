@@ -28,7 +28,8 @@ DELETE_QSO_LOG_QUERY = """
 GET_QSO_LOGS_BY_USER_ID_QUERY = """
     SELECT id, callsign, description, user_id
     FROM qso_logs
-    WHERE user_id = :user_id;
+    WHERE user_id = :user_id
+    order by id;
 """
 
 GET_QSO_LOG_BY_ID_QUERY = """
