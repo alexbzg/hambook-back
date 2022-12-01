@@ -51,7 +51,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.execute("""DROP SEQUENCE if exists public.qso_log_id_sec;""")
+    op.execute("""DROP SEQUENCE if exists public.qso_log_id_seq;""")
     op.execute("drop table if exists qso_logs;")
 
 
