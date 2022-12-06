@@ -52,7 +52,7 @@ async def update_qso_log(*,
     return QsoLogPublic(**updated_log.dict())
 
 
-@router.get("/{user_id}", response_model=List[QsoLogPublic], name="qso-logs:query-by-user")
+@router.get("/", response_model=List[QsoLogPublic], name="qso-logs:query-by-user")
 async def qso_logs_query_by_user(*,
     user_id: int,
 	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
@@ -68,7 +68,7 @@ async def qso_logs_query_by_user(*,
 
     return [QsoLogPublic(**log.dict()) for log in logs]
 
-@router.get("/", response_model=QsoLogPublic, name="qso-logs:query-by-log-id")
+@router.get("/{log_id}", response_model=QsoLogPublic, name="qso-logs:query-by-log-id")
 async def qso_log_by_id(*,
     log_id: int,
 	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
