@@ -3,6 +3,7 @@ import os
 from typing import Callable
 
 import pytest
+import pytest_asyncio
 
 from fastapi import FastAPI
 from databases import Database
@@ -28,6 +29,11 @@ def test_user_password_plain() -> str:
 @pytest.fixture
 def test_user_callsign() -> str:
     return "TE1ST"
+
+@pytest.fixture(scope="session")
+def anyio_backend():
+    return "asyncio"
+
 
 # Make requests in our tests
 @pytest.fixture

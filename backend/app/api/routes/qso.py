@@ -24,10 +24,11 @@ async def create_qso(*,
     log_id: int,
     new_qso: QsoBase = Body(..., embed=True),
 	current_user: UserInDB = Depends(get_current_active_user),
-    qso_log: QsoLogInDB = Depends(get_qso_log_for_update)
+    qso_log: QsoLogInDB = Depends(get_qso_log_for_update),
+    qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),    
 ) -> QsoPublic:
 
-    created_qso = await qso_logs_repo.create_log(new_qso=new_log, log_id=log_id)
+    created_qso = await qso_repo.create_qso(new_qso=new_qso, log_id=log_id)
 
     return QsoPublic(**created_qso.dict())
 
@@ -75,7 +76,7 @@ async def qso_query_by_log(*,
 @router.get("/{qso_id}", response_model=QsoPublic, name="qso:query-by-id")
 async def qso_by_id(*,
     qso_id: int,
-	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoRepository)),    
+	qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),    
 ) -> List[QsoPublic]:
 
     qso = await qso_repo.get_qso_by_id(id=qso_id)

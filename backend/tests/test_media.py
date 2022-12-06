@@ -13,7 +13,7 @@ from app.models.media import MediaInDB, MediaPublic, MediaType
 from app.db.repositories.media import MediaRepository
 from app.db.repositories.profiles import ProfilesRepository
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.anyio
 
 async def upload_media_helper(*, 
         app: FastAPI,

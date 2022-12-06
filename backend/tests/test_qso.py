@@ -12,32 +12,7 @@ from app.models.user import UserInDB, UserPublic
 from app.models.qso_log import QsoLogBase, QsoLogInDB
 from app.db.repositories.qso_logs import QsoLogsRepository
 
-pytestmark = pytest.mark.anyio
-
-async def create_qso_log_helper(*, 
-        app: FastAPI,
-        client: TestClient,
-        callsign: str,
-        description: str) -> Response:
-        return await client.post(app.url_path_for("qso-logs:create-log"), 
-            json={"new_log": {
-                "callsign": callsign,
-                "description": description
-                }}
-        )
-
-@pytest.fixture
-async def test_qso_log_created(
-        app: FastAPI,
-        db: Database, 
-        test_user: UserInDB,
-        authorized_client: TestClient) -> QsoLogInDB:
-    res = await create_qso_log_helper(
-            app=app, 
-            client=authorized_client,
-            callsign='adm1n/qrp',
-            description='fake description')
-    return QsoLogInDB(**res.json())
+pytestmark = pytest.mark.asyncio
 
 class TestQsoLogCreate:
     async def test_user_can_create_qso_log(self, *,
@@ -137,8 +112,8 @@ class TestQsoLogView:
         db: Database,
         test_qso_log_created: QsoLogInDB) -> None:
 
-        res = await client.get(app.url_path_for("qso-logs:query-by-user"), 
-                query_string={'user_id': test_user.id})
+        res = await client.get(app.url_path_for("qso-logs:query-by-user", 
+            user_id=test_user.id))
 
         assert res.status_code == 200        
         logs = [log for log in res.json() if int(log['id']) == test_qso_log_created.id]
@@ -154,8 +129,8 @@ class TestQsoLogView:
         db: Database,
         test_qso_log_created: QsoLogInDB) -> None:
 
-        res = await client.get(app.url_path_for("qso-logs:query-by-log-id", 
-                log_id=test_qso_log_created.id))
+        res = await client.get(app.url_path_for("qso-logs:query-by-log-id"), 
+                query_string={'log_id': test_qso_log_created.id})
 
         assert res.status_code == 200        
         assert (QsoLogInDB(**res.json()).dict(exclude={'created_at', 'updated_at'}) == 

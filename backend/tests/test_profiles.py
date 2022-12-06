@@ -10,7 +10,7 @@ from app.models.profile import ProfileInDB, ProfilePublic
 from app.db.repositories.profiles import ProfilesRepository
 
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.anyio
 
 
 class TestProfilesRoutes:

@@ -1,10 +1,11 @@
-from typing import Optional
+from typing import Optional, Dict
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
+import json, logging, traceback
 
 from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, FullCallsign
 
-class Band(Enum):
+class Band(StrEnum):
     _160M = '160M'
     _80M = '80M'
     _40M = '40M'
@@ -15,7 +16,7 @@ class Band(Enum):
     _12M = '12M'
     _10M = '10M'    
 
-class QsoMode(Enum):
+class QsoMode(StrEnum):
     CW = 'CW'
     SSB = 'SSB'
     FT4 = 'FT4'
@@ -36,7 +37,7 @@ class QsoBase(CoreModel):
     name: Optional[str]
     qth: Optional[str]
     gridsquare: Optional[str]
-    extra: dict
+    extra: Optional[dict]
 
 class QsoUpdate(QsoBase):
     callsign: Optional[FullCallsign]
@@ -46,10 +47,17 @@ class QsoUpdate(QsoBase):
     qso_mode: Optional[QsoMode]
     rst_s: Optional[int]
     rst_r: Optional[int]
-    extra: dict
 
 class QsoInDB(IDModelMixin, DateTimeModelMixin, QsoBase):
     log_id: int
+    extra: dict
+
+    def __init__(self, **kwargs):
+
+        if isinstance(kwargs.get('extra'), str):
+            kwargs['extra'] = json.loads(kwargs['extra'])
+
+        super().__init__(**kwargs)
 
 class QsoPublic(QsoInDB):
     id: str

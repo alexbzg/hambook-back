@@ -24,7 +24,7 @@ from app.core.config import SECRET_KEY, JWT_ALGORITHM, JWT_AUDIENCE, JWT_TOKEN_P
 from app.models.token import JWTMeta, JWTCreds, JWTPayload
 
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.anyio
 
 
 class TestUserRoutes:
