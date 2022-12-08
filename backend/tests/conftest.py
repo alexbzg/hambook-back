@@ -8,6 +8,7 @@ import pytest_asyncio
 from fastapi import FastAPI
 from databases import Database
 from async_asgi_testclient import TestClient
+from async_asgi_testclient.response import Response
 
 import alembic
 from alembic.config import Config
@@ -18,6 +19,8 @@ from app.models.media import MediaType
 from app.db.repositories.users import UsersRepository
 from app.db.repositories.profiles import ProfilesRepository
 from app.db.repositories.media import MediaRepository
+from app.models.qso_log import QsoLogInDB
+
 
 from app.core.config import SECRET_KEY, JWT_TOKEN_PREFIX
 from app.services import auth_service
@@ -119,15 +122,54 @@ async def test_user2(db: Database) -> UserInDB:
 
 @pytest.fixture
 def create_authorized_client(client: TestClient) -> Callable:
-	def _create_authorized_client(*, user: UserInDB) -> TestClient:
-		access_token = auth_service.create_access_token_for_user(user=user, secret_key=str(SECRET_KEY))
 
-		client.headers = {
-			**client.headers,
-			"Authorization": f"{JWT_TOKEN_PREFIX} {access_token}",
-		}
+    def _create_authorized_client(*, user: UserInDB) -> TestClient:
+        if user:
+            access_token = auth_service.create_access_token_for_user(
+                    user=user, secret_key=str(SECRET_KEY))
 
-		return client
+            client.headers = {
+                **client.headers,
+                "Authorization": f"{JWT_TOKEN_PREFIX} {access_token}",
+            }
+        else:
+            del client.headers["Authorization"]
 
-	return _create_authorized_client
+        return client
+
+    return _create_authorized_client
+
+@pytest.fixture
+async def create_client(app: FastAPI) -> Callable:
+    async def _create_client() -> TestClient:
+        async with TestClient(app) as client:
+            yield client
+
+    return _create_client
+
+async def create_qso_log_helper(*, 
+        app: FastAPI,
+        client: TestClient,
+        callsign: str,
+        description: str) -> Response:
+        return await client.post(app.url_path_for("qso-logs:create-log"), 
+            json={"new_log": {
+                "callsign": callsign,
+                "description": description
+                }}
+        )
+
+@pytest.fixture
+async def test_qso_log_created(
+        app: FastAPI,
+        db: Database, 
+        test_user: UserInDB,
+        authorized_client: TestClient) -> QsoLogInDB:
+    res = await create_qso_log_helper(
+            app=app, 
+            client=authorized_client,
+            callsign='adm1n/qrp',
+            description='fake description')
+    return QsoLogInDB(**res.json())
+
 

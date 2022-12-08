@@ -14,31 +14,6 @@ from app.db.repositories.qso_logs import QsoLogsRepository
 
 pytestmark = pytest.mark.anyio
 
-async def create_qso_log_helper(*, 
-        app: FastAPI,
-        client: TestClient,
-        callsign: str,
-        description: str) -> Response:
-        return await client.post(app.url_path_for("qso-logs:create-log"), 
-            json={"new_log": {
-                "callsign": callsign,
-                "description": description
-                }}
-        )
-
-@pytest.fixture
-async def test_qso_log_created(
-        app: FastAPI,
-        db: Database, 
-        test_user: UserInDB,
-        authorized_client: TestClient) -> QsoLogInDB:
-    res = await create_qso_log_helper(
-            app=app, 
-            client=authorized_client,
-            callsign='adm1n/qrp',
-            description='fake description')
-    return QsoLogInDB(**res.json())
-
 class TestQsoLogCreate:
     async def test_user_can_create_qso_log(self, *,
         app: FastAPI, 

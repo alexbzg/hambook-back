@@ -42,7 +42,7 @@ DELETE_QSO_QUERY = """
     WHERE id = :id;
 """
 
-GET_QSO_BY_ID_QUERY = """
+GET_QSO_BY_LOG_ID_QUERY = """
     SELECT id, log_id, callsign, qso_datetime, band, freq, qso_mode, 
         rst_s, rst_r, name, qth, gridsquare, extra, created_at, updated_at
     FROM qso
