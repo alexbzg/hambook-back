@@ -98,8 +98,6 @@ class QsoRepository(BaseRepository):
                 exclude={"log_id", "created_at", "updated_at"})
         update_params["extra"] = json.dumps(update_params["extra"])
 
-        logging.warn(f"update_params: {update_params}")
-
         updated_qso = await self.db.fetch_one(
             query=UPDATE_QSO_QUERY,
             values=update_params

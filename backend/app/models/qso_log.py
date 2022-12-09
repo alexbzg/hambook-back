@@ -10,6 +10,7 @@ class QsoLogBase(CoreModel):
 
 class QsoLogInDB(IDModelMixin, DateTimeModelMixin, QsoLogBase):
     user_id: int
+    qso_count: Optional[int]
 
 class QsoLogPublic(QsoLogInDB):
     id: str

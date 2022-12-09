@@ -26,14 +26,18 @@ DELETE_QSO_LOG_QUERY = """
 """
 
 GET_QSO_LOGS_BY_USER_ID_QUERY = """
-    SELECT id, callsign, description, user_id
+    SELECT id, callsign, description, user_id,
+       (SELECT count(*) from qso 
+            WHERE log_id = qso_logs.id) as qso_count
     FROM qso_logs
     WHERE user_id = :user_id
     order by id;
 """
 
 GET_QSO_LOG_BY_ID_QUERY = """
-    SELECT id, callsign, description, user_id
+    SELECT id, callsign, description, user_id,
+       (SELECT count(*) from qso 
+            WHERE log_id = :id) as qso_count
     FROM qso_logs
     WHERE id = :id;
 """
@@ -73,7 +77,7 @@ class QsoLogsRepository(BaseRepository):
         updated_qso_log = await self.db.fetch_one(
             query=UPDATE_QSO_LOG_QUERY,
             values=update_params.dict(
-                exclude={"user_id", "created_at", "updated_at"}),
+                exclude={"user_id", "qso_count", "created_at", "updated_at"}),
         )
 
         return QsoLogInDB(**updated_qso_log)
