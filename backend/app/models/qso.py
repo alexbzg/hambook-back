@@ -28,6 +28,7 @@ class QsoBase(CoreModel):
     also used for qso creation, user_id and log_id is in headers/path
     """
     callsign: FullCallsign
+    station_callsign: FullCallsign
     qso_datetime: datetime
     band: Band
     freq: float
@@ -38,9 +39,11 @@ class QsoBase(CoreModel):
     qth: Optional[str]
     gridsquare: Optional[str]
     extra: Optional[dict]
+    comment: Optional[str]
 
 class QsoUpdate(QsoBase):
     callsign: Optional[FullCallsign]
+    station_callsign: Optional[FullCallsign]
     qso_datetime: Optional[datetime]
     band: Optional[Band]
     freq: Optional[float]
@@ -50,7 +53,6 @@ class QsoUpdate(QsoBase):
 
 class QsoInDB(IDModelMixin, DateTimeModelMixin, QsoBase):
     log_id: int
-    extra: dict
 
     def __init__(self, **kwargs):
 

@@ -39,6 +39,7 @@ def upgrade() -> None:
             autoincrement=False),
         sa.Column("log_id", sa.BigInteger, sa.ForeignKey("qso_logs.id", ondelete="CASCADE")),  
         sa.Column("callsign", sa.Text, nullable=False, index=True),
+        sa.Column("station_callsign", sa.Text, nullable=False, index=True),
         sa.Column("qso_datetime", sa.TIMESTAMP(timezone=True), index=True, nullable=False),
         sa.Column("band", sa.Text, nullable=False, index=True),
         sa.Column("freq", sa.Numeric(8, 2), nullable=False),
@@ -48,6 +49,7 @@ def upgrade() -> None:
         sa.Column("name", sa.Text),
         sa.Column("qth", sa.Text),
         sa.Column("gridsquare", sa.Text),
+        sa.Column("comment", sa.Text),
         sa.Column("extra", JSONB),
         *timestamps()
     )

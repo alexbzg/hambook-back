@@ -20,6 +20,7 @@ pytestmark = pytest.mark.anyio
 async def test_qso_params():
     return {
         "callsign": "ADM1N/QRP",
+        "station_callsign": "U3/R7CL/M",
         "qso_datetime": "2022-12-08T08:55:17.532Z",
         "band": "160M",
         "freq": 18000.59,

@@ -8,18 +8,19 @@ from app.models.qso import QsoBase, QsoInDB, QsoUpdate
 from app.models.user import UserInDB
 
 CREATE_QSO_QUERY = """
-    INSERT INTO qso (log_id, callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, extra)
-    VALUES (:log_id, :callsign, :qso_datetime, :band, :freq, :qso_mode, 
-        :rst_s, :rst_r, :name, :qth, :gridsquare, :extra)
-    RETURNING id, log_id, callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, extra, created_at, updated_at;
+    INSERT INTO qso (log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
+        rst_s, rst_r, name, qth, gridsquare, comment, extra)
+    VALUES (:log_id, :callsign, :station_callsign, :qso_datetime, :band, :freq, :qso_mode, 
+        :rst_s, :rst_r, :name, :qth, :gridsquare, :comment, :extra)
+    RETURNING id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
+        rst_s, rst_r, name, qth, gridsquare, comment, extra, created_at, updated_at;
 """
 
 UPDATE_QSO_QUERY = """
     UPDATE qso 
     SET 
         callsign = :callsign, 
+        station_callsign = :station_callsign, 
         qso_datetime = :qso_datetime, 
         band = :band,
         freq = :freq, 
@@ -29,11 +30,12 @@ UPDATE_QSO_QUERY = """
         name = :name, 
         qth = :qth, 
         gridsquare = :gridsquare, 
+        comment = :comment,
         extra = :extra
     WHERE
         id = :id
-    RETURNING id, log_id, callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, extra, created_at, updated_at;
+    RETURNING id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
+        rst_s, rst_r, name, qth, gridsquare, extra, comment, created_at, updated_at;
 """
 
 
@@ -43,17 +45,18 @@ DELETE_QSO_QUERY = """
 """
 
 GET_QSO_BY_LOG_ID_QUERY = """
-    SELECT id, log_id, callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, extra, created_at, updated_at
+    SELECT id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
+        rst_s, rst_r, name, qth, gridsquare,  comment, extra, created_at, updated_at
     FROM qso
     WHERE log_id = :log_id
+    order by id desc;
 """
 
 GET_QSO_BY_ID_QUERY = """
-    SELECT id, log_id, callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, extra, created_at, updated_at
+    SELECT id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
+        rst_s, rst_r, name, qth, gridsquare, comment, extra, created_at, updated_at
     FROM qso
-    WHERE id = :id
+    WHERE id = :id;
 """
 
 

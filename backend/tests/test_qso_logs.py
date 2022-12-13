@@ -118,8 +118,8 @@ class TestQsoLogView:
         assert res.status_code == 200        
         logs = [log for log in res.json() if int(log['id']) == test_qso_log_created.id]
         assert len(logs) == 1
-        assert (QsoLogInDB(**logs[0]).dict(exclude={'created_at', 'updated_at'}) == 
-                test_qso_log_created.dict(exclude={'created_at', 'updated_at'}))
+        assert (QsoLogInDB(**logs[0]).dict(exclude={'created_at', 'updated_at', 'qso_count'}) == 
+                test_qso_log_created.dict(exclude={'created_at', 'updated_at', 'qso_count'}))
 
     async def test_clients_can_query_logs_by_id(self, *,
         app: FastAPI, 
@@ -133,6 +133,6 @@ class TestQsoLogView:
                 log_id=test_qso_log_created.id))
 
         assert res.status_code == 200        
-        assert (QsoLogInDB(**res.json()).dict(exclude={'created_at', 'updated_at'}) == 
-                test_qso_log_created.dict(exclude={'created_at', 'updated_at'}))
+        assert (QsoLogInDB(**res.json()).dict(exclude={'created_at', 'updated_at', 'qso_count'}) == 
+                test_qso_log_created.dict(exclude={'created_at', 'updated_at', 'qso_count'}))
 
