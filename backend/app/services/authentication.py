@@ -81,7 +81,7 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not validate token credentials.",
-                headers={"WWW-Authenticate": {token_type} },
+                headers={"WWW-Authenticate": token_type },
             )
         return payload.id
 
