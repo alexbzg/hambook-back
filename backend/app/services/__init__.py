@@ -7,3 +7,6 @@ html_templates_service = HTMLTemplatesService()
 from app.services.email import EmailService
 email_service = EmailService()
 
+from app.services.callsigns_autocomplete import CallsignsTrie
+callsigns_autocomplete_service = CallsignsTrie()
+
