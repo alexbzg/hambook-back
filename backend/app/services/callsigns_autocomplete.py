@@ -22,7 +22,7 @@ class TrieNode:
         node.add(word_part[1:], weight=weight)
 
     def find_all(self, word_part: str, path: str=""):
-        if self.end_of_word:
+        if self.end_of_word and word_part == "":
             yield path + self.value, self.weight
 
         if len(word_part) > 0:
