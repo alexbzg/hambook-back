@@ -1,17 +1,22 @@
-from typing import List
+from typing import List, Optional
 
+import logging
+
+from pydantic import constr
 from fastapi import Depends, APIRouter, HTTPException, Path, Body, Form, status, UploadFile, File
 from starlette.status import (
         HTTP_400_BAD_REQUEST, 
         HTTP_401_UNAUTHORIZED, 
         HTTP_404_NOT_FOUND )
+
 from app.api.dependencies.auth import get_current_active_user
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.qso_logs import get_qso_log_for_update
 from app.api.dependencies.qso import get_qso_for_update
 from app.models.qso_log import QsoLogInDB
-from app.models.qso import QsoBase, QsoInDB, QsoUpdate, QsoPublic
+from app.models.qso import QsoBase, QsoInDB, QsoUpdate, QsoPublic, Band, QsoMode
 from app.models.user import UserInDB
+from app.models.core import FullCallsign
 from app.db.repositories.qso import QsoRepository
 from app.db.repositories.qso_logs import QsoLogsRepository
 
@@ -60,10 +65,16 @@ async def update_qso(*,
 @router.get("/logs/{log_id}/qso", response_model=List[QsoPublic], name="qso:query-by-log")
 async def qso_query_by_log(*,
     log_id: int,
-	qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),    
+	qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),
+    callsign_search: Optional[constr(to_upper=True, min_length=2)] = None,
+    band: Optional[Band] = None,
+    qso_mode: Optional[QsoMode] = None
 ) -> List[QsoPublic]:
 
-    qso = await qso_repo.get_qso_by_log_id(log_id=log_id)
+    if callsign_search:
+        callsign_search = callsign_search.replace('*', '%')
+        logging.warning(callsign_search)
+    qso = await qso_repo.get_qso_by_log_id(log_id=log_id, callsign_search=callsign_search, band=band, qso_mode=qso_mode)
 
     if not qso:
         raise HTTPException(
@@ -72,6 +83,25 @@ async def qso_query_by_log(*,
         )
 
     return [QsoPublic(**qso.dict()) for qso in qso]
+
+@router.get("/logs/{log_id}/callsigns/{callsign_start}", 
+        response_model=List[FullCallsign], name="qso:query-callsigns-by-log")
+async def callsigns_query_by_log(*,
+    log_id: int,
+    callsign_start: constr(to_upper=True),
+    limit: int = 20,
+	qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),
+) -> List[FullCallsign]:
+
+    callsigns = await qso_repo.get_callsigns_by_log_id(log_id=log_id, callsign_start=callsign_start, limit=limit)
+
+    if not callsigns:
+        raise HTTPException(
+            status_code=HTTP_404_NOT_FOUND,
+            detail="Callsigns not found"
+        )
+
+    return callsigns
 
 @router.get("/{qso_id}", response_model=QsoPublic, name="qso:query-by-id")
 async def qso_by_id(*,

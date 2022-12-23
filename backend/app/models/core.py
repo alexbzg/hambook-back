@@ -4,7 +4,7 @@ from pydantic import BaseModel, validator, constr
 from enum import IntEnum
 
 Callsign = constr(regex=r"\d*[A-Z]+\d+[A-Z]+", to_upper=True, strip_whitespace=True)
-FullCallsign = constr(regex=r"(:?[A-Z\d]+\/)?\d*[A-Z]+\d+[A-Z]+(:?\/[A-Z\d]+)*",
+FullCallsign = constr(regex=r"([A-Z\d]+/)?\d*[A-Z]+\d+[A-Z]+(/[A-Z\d]+)*",
         to_upper=True, strip_whitespace=True)
 
 Phone = constr(regex=r"\+\d{11}", strip_whitespace=True)
