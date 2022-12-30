@@ -38,7 +38,8 @@ EMAIL_FROM = config("EMAIL_FROM", cast=str)
 EMAIL_PORT = config("EMAIL_PORT", cast=str)
 EMAIL_HOST = config("EMAIL_HOST", cast=str)
 
-
+QRZ_USER = config("QRZ_USER", cast=str)
+QRZ_PASSWORD = config("QRZ_PASSWORD", cast=str)
 
 DATABASE_URL = config(
   "DATABASE_URL",
