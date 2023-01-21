@@ -4,6 +4,7 @@ import logging
 
 from pydantic import constr
 from fastapi import Depends, APIRouter, HTTPException, Path, Body, Form, status, UploadFile, File
+from fastapi.responses import StreamingResponse
 from starlette.status import (
         HTTP_400_BAD_REQUEST, 
         HTTP_401_UNAUTHORIZED, 
@@ -14,11 +15,12 @@ from app.api.dependencies.database import get_repository
 from app.api.dependencies.qso_logs import get_qso_log_for_update
 from app.api.dependencies.qso import get_qso_for_update
 from app.models.qso_log import QsoLogInDB
-from app.models.qso import QsoBase, QsoInDB, QsoUpdate, QsoPublic, Band, QsoMode
+from app.models.qso import QsoBase, QsoInDB, QsoUpdate, QsoPublic, Band, QsoMode, QsoFilter
 from app.models.user import UserInDB
 from app.models.core import FullCallsign
 from app.db.repositories.qso import QsoRepository
 from app.db.repositories.qso_logs import QsoLogsRepository
+from app.utils.adif import create_adif
 
 import logging
 
@@ -74,7 +76,11 @@ async def qso_query_by_log(*,
     if callsign_search:
         callsign_search = callsign_search.replace('*', '%')
         logging.warning(callsign_search)
-    qso = await qso_repo.get_qso_by_log_id(log_id=log_id, callsign_search=callsign_search, band=band, qso_mode=qso_mode)
+    qso = await qso_repo.get_qso_by_log_id(
+            log_id=log_id, 
+            callsign_search=callsign_search, 
+            band=band, 
+            qso_mode=qso_mode)
 
     if not qso:
         raise HTTPException(
@@ -102,6 +108,22 @@ async def callsigns_query_by_log(*,
         )
 
     return callsigns
+
+@router.post("/logs/{log_id}/adif", response_class=StreamingResponse, name="qso:export-adif")
+async def adif_export(*,
+    log_id: int,
+    qso_filter: Optional[QsoFilter] = Body(..., embed=True),
+	qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),
+) -> StreamingResponse:
+
+    log_iter = qso_repo.qso_log_iterator(log_id=log_id, qso_filter=qso_filter)
+    adif_iter = create_adif(log_iter)
+
+    response = StreamingResponse(adif_iter, media_type="text/adi")
+    response.headers["Content-Disposition"] = f"attachment; filename={log_id}.adi"
+
+    return response
+
 
 @router.get("/{qso_id}", response_model=QsoPublic, name="qso:query-by-id")
 async def qso_by_id(*,

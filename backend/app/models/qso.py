@@ -1,9 +1,10 @@
 from typing import Optional, Dict
-from datetime import datetime
+from pydantic import BaseModel
+from datetime import datetime, date
 from enum import StrEnum
 import json, logging, traceback
 
-from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, FullCallsign
+from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, FullCallsign, CallsignSearch
 
 class Band(StrEnum):
     _160M = '160M'
@@ -24,7 +25,7 @@ class QsoMode(StrEnum):
 
 class QsoBase(CoreModel):
     """
-    Requested fields for valid qso
+    Required fields for valid qso
     also used for qso creation, user_id and log_id is in headers/path
     """
     callsign: FullCallsign
@@ -64,3 +65,11 @@ class QsoInDB(IDModelMixin, DateTimeModelMixin, QsoBase):
 class QsoPublic(QsoInDB):
     id: str
     log_id: str
+
+class QsoFilter(BaseModel):
+    callsign_search: Optional[CallsignSearch]
+    band: Optional[Band]
+    qso_mode: Optional[QsoMode]
+    date_begin: Optional[date]
+    date_end: Optional[date]
+

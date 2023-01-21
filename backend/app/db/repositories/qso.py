@@ -1,10 +1,11 @@
-from typing import List, Optional
+from typing import List, Optional, AsyncIterator
 import json
+from datetime import date
 
 from pydantic import constr
 
 from app.db.repositories.base import BaseRepository
-from app.models.qso import QsoBase, QsoInDB, QsoUpdate, Band, QsoMode
+from app.models.qso import QsoBase, QsoInDB, QsoUpdate, Band, QsoMode, QsoFilter
 from app.models.core import FullCallsign
 from app.models.user import UserInDB
 
@@ -52,7 +53,9 @@ GET_QSO_BY_LOG_ID_QUERY = """
     WHERE log_id = :log_id and 
         (cast(:callsign_search as text) is null or callsign like :callsign_search) and 
         (cast(:band as text) is null or band = :band) and
-        (cast(:qso_mode as text) is null or :qso_mode = qso_mode)
+        (cast(:qso_mode as text) is null or :qso_mode = qso_mode) and
+        (cast(:date_begin as timestamp) is null or :date_begin < qso_datetime) and
+        (cast(:date_end as timestamp) is null or :date_end > qso_datetime)
     order by id desc;
 """
 
@@ -94,19 +97,37 @@ class QsoRepository(BaseRepository):
         log_id: int,
         callsign_search: Optional[str] = None,
         band: Optional[Band] = None,
-        qso_mode: Optional[QsoMode] = None) -> List[QsoInDB]:
+        qso_mode: Optional[QsoMode] = None,
+        date_begin: Optional[date] = None,
+        date_end: Optional[date] = None ) -> List[QsoInDB]:
         qsos = await self.db.fetch_all(query=GET_QSO_BY_LOG_ID_QUERY, 
                 values={
                     "log_id": log_id,
                     "callsign_search": callsign_search,
                     "band": band,
-                    "qso_mode": qso_mode
+                    "qso_mode": qso_mode,
+                    "date_begin": date_begin,
+                    "date_end": date_end
                     })
 
         if not qsos:
             return None
 
         return [QsoInDB(**qso) for qso in qsos]
+
+    async def qso_log_iterator(self, *,
+        log_id: int,
+        qso_filter: QsoFilter) -> AsyncIterator[QsoInDB]:
+        async for qso in self.db.iterate(query=GET_QSO_BY_LOG_ID_QUERY, 
+                values={
+                    "log_id": log_id,
+                    "callsign_search": qso_filter.callsign_search,
+                    "band": qso_filter.band,
+                    "qso_mode": qso_filter.qso_mode,
+                    "date_begin": qso_filter.date_begin,
+                    "date_end": qso_filter.date_end
+                    }):
+            yield QsoInDB(**qso)
 
     async def get_callsigns_by_log_id(self, *, 
         log_id: int,
