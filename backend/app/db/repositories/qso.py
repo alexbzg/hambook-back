@@ -11,11 +11,11 @@ from app.models.user import UserInDB
 
 CREATE_QSO_QUERY = """
     INSERT INTO qso (log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, comment, extra)
+        rst_s, rst_r, extra)
     VALUES (:log_id, :callsign, :station_callsign, :qso_datetime, :band, :freq, :qso_mode, 
-        :rst_s, :rst_r, :name, :qth, :gridsquare, :comment, :extra)
+        :rst_s, :rst_r, :extra)
     RETURNING id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, comment, extra, created_at, updated_at;
+        rst_s, rst_r, extra, created_at, updated_at;
 """
 
 UPDATE_QSO_QUERY = """
@@ -29,15 +29,11 @@ UPDATE_QSO_QUERY = """
         qso_mode = :qso_mode, 
         rst_s = :rst_s, 
         rst_r = :rst_r, 
-        name = :name, 
-        qth = :qth, 
-        gridsquare = :gridsquare, 
-        comment = :comment,
         extra = :extra
     WHERE
         id = :id
     RETURNING id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, extra, comment, created_at, updated_at;
+        rst_s, rst_r, comment, created_at, updated_at;
 """
 
 
@@ -48,14 +44,14 @@ DELETE_QSO_QUERY = """
 
 GET_QSO_BY_LOG_ID_QUERY = """
     SELECT id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare,  comment, extra, created_at, updated_at
+        rst_s, rst_r, extra, created_at, updated_at
     FROM qso
     WHERE log_id = :log_id and 
         (cast(:callsign_search as text) is null or callsign like :callsign_search) and 
         (cast(:band as text) is null or band = :band) and
         (cast(:qso_mode as text) is null or :qso_mode = qso_mode) and
         (cast(:date_begin as timestamp) is null or :date_begin < qso_datetime) and
-        (cast(:date_end as timestamp) is null or :date_end > qso_datetime)
+        (cast(:date_end as timestamp) is null or :date_end + interval '1 day' > qso_datetime)
     order by id desc;
 """
 
@@ -70,7 +66,7 @@ GET_CALLSIGNS_BY_LOG_ID_QUERY = """
 
 GET_QSO_BY_ID_QUERY = """
     SELECT id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, name, qth, gridsquare, comment, extra, created_at, updated_at
+        rst_s, rst_r, extra, created_at, updated_at
     FROM qso
     WHERE id = :id;
 """

@@ -23,6 +23,41 @@ class QsoMode(StrEnum):
     FT4 = 'FT4'
     FT8 = 'FT8'
 
+class QsoExtraField(StrEnum):
+    CNTY = "CNTY"
+    COMMENT = "COMMENT"
+    CONTEST_ID = "CONTEST_ID"
+    COUNTRY = "COUNTRY"
+    CQZ = "CQZ"
+    DARC_DOK = "DARC_DOK"
+    DISTANCE = "DISTANCE"
+    DXCC = "DXCC"
+    GRIDSQUARE = "GRIDSQUARE"
+    IOTA = "IOTA"
+    ITUZ = "ITUZ"
+    MY_CITY = "MY_CITY"
+    MY_CNTY = "MY_CNTY"
+    MY_COUNTRY = "MY_COUNTRY"
+    MY_CQ_ZONE = "MY_CQ_ZONE"
+    MY_DXCC = "MY_DXCC"
+    MY_GRIDSQUARE = "MY_GRIDSQUARE"
+    MY_NAME = "MY_NAME"
+    MY_POTA_REF = "MY_POTA_REF"
+    MY_SOTA_REF = "MY_SOTA_REF"
+    MY_STATE = "MY_STATE"
+    MY_WWFF_REF = "MY_WWFF_REF"
+    NAME = "NAME"
+    NOTES = "NOTES"
+    OPERATOR = "OPERATOR"
+    POTA_REF = "POTA_REF"
+    QTH = "QTH"
+    SOTA_REF = "SOTA_REF"
+    STATE = "STATE"
+    PFX = "PFX"
+    SRX = "SRX"
+    STX = "STX"
+    WWFF_REF = "WWFF_REF"
+
 class QsoBase(CoreModel):
     """
     Required fields for valid qso
@@ -36,11 +71,7 @@ class QsoBase(CoreModel):
     qso_mode: QsoMode
     rst_s: int
     rst_r: int
-    name: Optional[str]
-    qth: Optional[str]
-    gridsquare: Optional[str]
-    extra: Optional[dict]
-    comment: Optional[str]
+    extra: Optional[Dict[QsoExtraField, str]]
 
 class QsoUpdate(QsoBase):
     callsign: Optional[FullCallsign]
