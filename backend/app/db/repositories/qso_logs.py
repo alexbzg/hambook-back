@@ -7,16 +7,17 @@ from app.models.user import UserInDB
 CREATE_QSO_LOG_QUERY = """
     INSERT INTO qso_logs (callsign,  description, user_id)
     VALUES (:callsign, :description, :user_id)
-    RETURNING id, callsign, description, user_id;
+    RETURNING id, callsign, description, user_id, extra_fields;
 """
 
 UPDATE_QSO_LOG_QUERY = """
     UPDATE qso_logs
     set 
         description = :description, 
-        callsign = :callsign
+        callsign = :callsign,
+        extra_fields = :extra_fields
     WHERE id = :id
-    RETURNING id, callsign, description, user_id;
+    RETURNING id, callsign, description, user_id, extra_fields;
 """
 
 
@@ -26,7 +27,7 @@ DELETE_QSO_LOG_QUERY = """
 """
 
 GET_QSO_LOGS_BY_USER_ID_QUERY = """
-    SELECT id, callsign, description, user_id,
+    SELECT id, callsign, description, user_id, extra_fields,
        (SELECT count(*) from qso 
             WHERE log_id = qso_logs.id) as qso_count
     FROM qso_logs
@@ -35,7 +36,7 @@ GET_QSO_LOGS_BY_USER_ID_QUERY = """
 """
 
 GET_QSO_LOG_BY_ID_QUERY = """
-    SELECT id, callsign, description, user_id,
+    SELECT id, callsign, description, user_id, extra_fields,
        (SELECT count(*) from qso 
             WHERE log_id = :id) as qso_count
     FROM qso_logs

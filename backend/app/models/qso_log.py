@@ -1,5 +1,6 @@
-from typing import Optional
+from typing import Optional, List
 from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, FullCallsign
+from app.models.qso import QsoExtraField
 
 class QsoLogBase(CoreModel):
     """
@@ -7,6 +8,7 @@ class QsoLogBase(CoreModel):
     """
     callsign: Optional[FullCallsign]
     description: Optional[str]
+    extra_fields: Optional[List[QsoExtraField]]
 
 class QsoLogInDB(IDModelMixin, DateTimeModelMixin, QsoLogBase):
     user_id: int
