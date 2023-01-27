@@ -33,7 +33,7 @@ UPDATE_QSO_QUERY = """
     WHERE
         id = :id
     RETURNING id, log_id, callsign, station_callsign, qso_datetime, band, freq, qso_mode, 
-        rst_s, rst_r, comment, created_at, updated_at;
+        rst_s, rst_r, extra, created_at, updated_at;
 """
 
 
