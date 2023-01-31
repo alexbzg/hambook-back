@@ -47,3 +47,4 @@ DATABASE_URL = config(
   default=f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
 )
 
+RABBITMQ_URL = config("RABBITMQ_URL", cast=str)

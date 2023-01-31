@@ -15,6 +15,27 @@ services:
       - 8000:8000
     depends_on:
       - db
+      - celery_worker
+
+  celery_worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ./backend/:/backend/
+      - /var/logs/hambook-dev:/backend/logs
+    command: celery --app app.celery.worker worker --loglevel=info --logfile=logs/celery.log
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+      - rabbitmq
+
+        #  redis:
+        #    image: redis:6-alpine
+        #    ports:
+        #      - 6379:6379
+
 
   db:
     image: postgres:13-alpine
@@ -27,7 +48,16 @@ services:
     ports:
       - 5433:5432
 
+  rabbitmq:
+    restart: always
+    image: rabbitmq:3.11-alpine
+    ports:
+      - 5672:5672
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+        
 volumes:
     postgres_data:
+    rabbitmq_data:
 
 

@@ -36,6 +36,7 @@ class IDModelMixin(BaseModel):
 class IDStrModelMixin(BaseModel):
     """
     id converted to str for json output because json mangles bigints
+    also for original string ids
     """
     id: str
 
