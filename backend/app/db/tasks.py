@@ -1,3 +1,4 @@
+from typing import Optional
 import os 
 
 from fastapi import FastAPI
@@ -8,13 +9,15 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-async def connect_to_db(app: FastAPI) -> None:
+async def connect_to_db(app: Optional[FastAPI] = None) -> Database:
     FINAL_DB_URL = f"{DATABASE_URL}_test" if os.environ.get("TESTING") else DATABASE_URL
     database = Database(FINAL_DB_URL, min_size=2, max_size=10)
 
     try:
         await database.connect()
-        app.state._db = database
+        if app:
+            app.state._db = database
+        return database
     except Exception as e:
         logger.warn("--- DB CONNECTION ERROR ---")
         logger.warn(e)

@@ -10,7 +10,14 @@ from app.api.dependencies.database import get_repository
 from app.api.dependencies.qso_logs import get_qso_log_for_update
 from app.models.qso_log import QsoLogBase, QsoLogInDB, QsoLogPublic
 from app.models.user import UserInDB
+from app.models.core import FileType
+from app.models.task import TaskBase
+from app.services.static_files import save_file, full_path
+from app.celery.worker import task_adif_import
 from app.db.repositories.qso_logs import QsoLogsRepository
+
+from app.db.repositories.qso import QsoRepository
+from app.utils.adif import parse_adif
 
 import logging
 
@@ -51,6 +58,21 @@ async def update_qso_log(*,
 
     return QsoLogPublic(**updated_log.dict())
 
+@router.put("/{log_id}/adif", response_model=TaskBase, name="qso-logs:adif-import")
+async def adif_import(*,
+	current_user: UserInDB = Depends(get_current_active_user),
+	qso_logs_repo: QsoLogsRepository = Depends(get_repository(QsoLogsRepository)),    
+    qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),    
+    qso_log: QsoLogInDB = Depends(get_qso_log_for_update),
+    file: UploadFile = File(...),
+) -> TaskBase:
+
+    file_path = full_path(await save_file(
+            file_type=FileType.adi,
+            upload=file))
+
+    task = task_adif_import.delay(log=qso_log, file_path=file_path)
+    return TaskBase(id=task.id)
 
 @router.get("/", response_model=List[QsoLogPublic], name="qso-logs:query-by-user")
 async def qso_logs_query_by_user(*,

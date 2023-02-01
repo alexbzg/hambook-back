@@ -14,6 +14,7 @@ Phone = constr(regex=r"\+\d{11}", strip_whitespace=True)
 
 class FileType(IntEnum):
     media = 1
+    adi = 2
 
 class CoreModel(BaseModel):
     """

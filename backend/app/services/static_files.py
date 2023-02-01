@@ -20,9 +20,13 @@ def get_directory(*,
         if media_type == MediaType.avatar:
             return '/media/avatars'
         return '/media'
+    if file_type == FileType.adi:
+        return '/adif'
     return '/'
 
-def get_file_extention(content_type: str) -> str:
+def get_file_extention(content_type: str, file_type: Optional[FileType] = None) -> str:
+    if file_type == FileType.adi:
+        return '.adi'
     if content_type == 'image/jpeg':
         return '.jpeg'
     if content_type == 'image/png':
@@ -38,7 +42,7 @@ async def save_file(*,
             file_type=file_type, 
             media_type=media_type, 
             name=name, 
-            ext=get_file_extention(upload.content_type))
+            ext=get_file_extention(upload.content_type, file_type))
     async with aiofiles.open(full_path(path), 'wb') as out_file:
         while content := await upload.read(1024):  
             await out_file.write(content)

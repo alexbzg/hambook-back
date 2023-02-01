@@ -71,7 +71,7 @@ class QsoBase(CoreModel):
     qso_mode: QsoMode
     rst_s: int
     rst_r: int
-    extra: Optional[Dict[QsoExtraField, str]]
+    extra: Optional[Dict[str, str]]
 
 class QsoUpdate(QsoBase):
     callsign: Optional[FullCallsign]

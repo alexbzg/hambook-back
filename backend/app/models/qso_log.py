@@ -8,7 +8,7 @@ class QsoLogBase(CoreModel):
     """
     callsign: Optional[FullCallsign]
     description: Optional[str]
-    extra_fields: Optional[List[QsoExtraField]]
+    extra_fields: Optional[List[str]]
 
 class QsoLogInDB(IDModelMixin, DateTimeModelMixin, QsoLogBase):
     user_id: int

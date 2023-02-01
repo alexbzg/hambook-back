@@ -1,13 +1,22 @@
 import time
+import asyncio
 
 from celery import Celery
 from celery.result import AsyncResult
 from app.core.config import RABBITMQ_URL, DATABASE_URL
 from app.models.task import TaskResult
+from app.models.qso_log import QsoLogInDB
+from app.db.tasks import connect_to_db
+from app.db.repositories.qso import QsoRepository
+from app.utils.adif import parse_adif
 
 celery_app = Celery(__name__)
 celery_app.conf.broker_url = RABBITMQ_URL
 celery_app.conf.result_backend = f"db+{DATABASE_URL}"
+celery_app.conf.task_serializer = "pickle"
+celery_app.conf.result_serializer = "pickle"
+celery_app.conf.accept_content = ["application/json", "application/x-python-serialize"]
+celery_app.conf.result_accept_content = ["application/json", "application/x-python-serialize"]
 
 @celery_app.task(name="test")
 def task_test(*, delay: int) -> bool:
@@ -20,3 +29,16 @@ def get_task_status(task_id: str) -> TaskResult:
             else task_result.result)
     return TaskResult(id=task_id, status=task_result.status, result=result) 
 
+@celery_app.task(name="adif_import")
+def task_adif_import(*, file_path: str, log: QsoLogInDB) -> bool:
+
+    qso_errors = []
+
+    async def _import():
+        db = await connect_to_db()
+        qso_repository = QsoRepository(db)
+        for qso in parse_adif(file_path, log_settings=log.dict(), qso_errors=qso_errors):
+            await qso_repository.create_qso(new_qso=qso, log_id=log.id)
+
+    asyncio.run(_import())
+    return qso_errors

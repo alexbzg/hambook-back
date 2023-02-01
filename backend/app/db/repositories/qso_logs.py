@@ -50,7 +50,7 @@ class QsoLogsRepository(BaseRepository):
         requesting_user: UserInDB) -> QsoLogInDB:
 
         created_log = await self.db.fetch_one(query=CREATE_QSO_LOG_QUERY, 
-                values={**new_log.dict(), "user_id": int(requesting_user.id)})
+                values={**new_log.dict(exclude={"extra_fields"}), "user_id": int(requesting_user.id)})
 
         return QsoLogInDB(**created_log)
 
