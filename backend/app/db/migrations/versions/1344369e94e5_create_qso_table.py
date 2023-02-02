@@ -32,6 +32,7 @@ def upgrade() -> None:
     MAXVALUE 9223372036854775807
     CACHE 1;"""))
 
+
     op.create_table(
         "qso",
         sa.Column("id", sa.BigInteger, primary_key=True, 
@@ -46,10 +47,6 @@ def upgrade() -> None:
         sa.Column("qso_mode", sa.Text, nullable=False, index=True),
         sa.Column("rst_s", sa.SmallInteger, nullable=False, server_default=sa.text('599')),
         sa.Column("rst_r", sa.SmallInteger, nullable=False, server_default=sa.text('599')),
-        sa.Column("name", sa.Text),
-        sa.Column("qth", sa.Text),
-        sa.Column("gridsquare", sa.Text),
-        sa.Column("comment", sa.Text),
         sa.Column("extra", JSONB),
         *timestamps()
     )
@@ -62,6 +59,38 @@ def upgrade() -> None:
         EXECUTE PROCEDURE update_updated_at_column();
         """
     )
+
+	op.execute(sa.text(
+        """
+        CREATE OR REPLACE FUNCTION update_updated_at_column()
+            RETURNS TRIGGER AS
+        $BODY$
+        BEGIN
+          if exists (select from qso where qso.callsign = new.callsign and qso.log_id = new.log_id 
+            and qso.qso_mode = new.qso_mode and qso.band = new.band and 
+            qso.band = new.band and qso.qso_datetime > new.qso_datetime - interval '5 minutes' and 
+			qso.qso_datetime < new.qso_datetime + interval '5 minutes')
+		  then
+			  raise exception using
+					errcode='HB001',
+					message='The QSO is already in this log.';
+		  end if;
+		  RETURN NEW;
+        END;
+        $BODY$ language 'plpgsql';
+        """
+    ))
+
+    op.execute(
+        """
+        CREATE TRIGGER check_qso_dupes
+            BEFORE INSERT OR UPDATE
+            ON qso
+            FOR EACH ROW
+        EXECUTE FUNCTION check_qso_dupes();
+        """
+    )
+   
 
 def downgrade() -> None:
     op.execute("""DROP SEQUENCE if exists public.qso_id_seq;""")

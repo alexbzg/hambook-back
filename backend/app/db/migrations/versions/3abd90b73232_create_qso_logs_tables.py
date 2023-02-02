@@ -8,6 +8,8 @@ Create Date: 2022-11-25 13:43:25.923966
 from alembic import op
 import sqlalchemy as sa
 
+from sqlalchemy.dialects.postgresql import ARRAY
+
 import sys, pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 from common import timestamps
@@ -37,6 +39,7 @@ def upgrade() -> None:
         sa.Column("callsign", sa.Text, nullable=False),
         sa.Column("description", sa.Text),
         sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE")),
+        sa.Column("extra_fields", ARRAY(sa.Text)),
         *timestamps()
     )
     op.execute(
