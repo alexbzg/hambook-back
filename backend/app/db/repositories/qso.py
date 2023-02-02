@@ -1,8 +1,10 @@
 from typing import List, Optional, AsyncIterator
 import json
 from datetime import date
+import logging
 
 from pydantic import constr
+from asyncpg.exceptions._base import UnknownPostgresError
 
 from app.db.repositories.base import BaseRepository
 from app.models.qso import QsoBase, QsoInDB, QsoUpdate, Band, QsoMode, QsoFilter
@@ -71,21 +73,31 @@ GET_QSO_BY_ID_QUERY = """
     WHERE id = :id;
 """
 
+class DuplicateQsoError(Exception):
+    pass
 
 class QsoRepository(BaseRepository):
+
+    async def write_qso(self, *, query: str, values: dict):
+        try: 
+            return await self.db.fetch_one(
+                    query=query, 
+                    values=values)
+        except UnknownPostgresError as exc:
+            if str(exc) == 'The QSO is already in this log.':
+                raise DuplicateQsoError()
 
     async def create_qso(self, *, 
         new_qso: QsoBase,
         log_id: int) -> QsoInDB:
 
-        created_qso = await self.db.fetch_one(
+        created_qso = await self.write_qso(
                 query=CREATE_QSO_QUERY, 
                 values={
                     **new_qso.dict(exclude={"extra"}), 
                     "extra": json.dumps(new_qso.extra), 
                     "log_id": log_id
                     })
-
 
         return QsoInDB(**created_qso)
 
@@ -160,7 +172,7 @@ class QsoRepository(BaseRepository):
                 exclude={"log_id", "created_at", "updated_at"})
         update_params["extra"] = json.dumps(update_params["extra"])
 
-        updated_qso = await self.db.fetch_one(
+        updated_qso = await self.write_qso(
             query=UPDATE_QSO_QUERY,
             values=update_params
         )

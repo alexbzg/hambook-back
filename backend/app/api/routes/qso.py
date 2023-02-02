@@ -18,13 +18,28 @@ from app.models.qso_log import QsoLogInDB
 from app.models.qso import QsoBase, QsoInDB, QsoUpdate, QsoPublic, Band, QsoMode, QsoFilter
 from app.models.user import UserInDB
 from app.models.core import FullCallsign
-from app.db.repositories.qso import QsoRepository
+from app.db.repositories.qso import QsoRepository, DuplicateQsoError  
 from app.db.repositories.qso_logs import QsoLogsRepository
 from app.utils.adif import create_adif
 
 import logging
 
 router = APIRouter()
+
+async def write_qso(*, qso_repo: QsoRepository, 
+        log_id: int = None,
+        qso: QsoBase,
+        qso_update: QsoUpdate = None) -> QsoPublic:
+
+    try:
+        qso_from_db = (await qso_repo.update_qso(qso=qso, qso_update=qso_update) if qso_update
+                else await qso_repo.create_qso(new_qso=qso, log_id=log_id))
+        return QsoPublic(**qso_from_db.dict())
+    except DuplicateQsoError:
+        raise HTTPException(
+            status_code=HTTP_400_BAD_REQUEST,
+            detail="The QSO is already in this log."
+        )
 
 @router.post("/logs/{log_id}", response_model=QsoPublic, name="qso:create-qso")
 async def create_qso(*,
@@ -35,9 +50,7 @@ async def create_qso(*,
     qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),    
 ) -> QsoPublic:
 
-    created_qso = await qso_repo.create_qso(new_qso=new_qso, log_id=log_id)
-
-    return QsoPublic(**created_qso.dict())
+    return await write_qso(qso_repo=qso_repo, qso=new_qso, log_id=log_id)
 
 @router.delete("/{qso_id}", response_model=dict, name="qso:delete-qso")
 async def delete_qso(*,
@@ -59,10 +72,7 @@ async def update_qso(*,
     qso: QsoInDB = Depends(get_qso_for_update)
 ) -> QsoPublic:
 
-    updated_qso = await qso_repo.update_qso(qso=qso, qso_update=qso_update)
-
-    return QsoPublic(**updated_qso.dict())
-
+    return await write_qso(qso_repo=qso_repo, qso=qso, qso_update=qso_update)
 
 @router.get("/logs/{log_id}/qso", response_model=List[QsoPublic], name="qso:query-by-log")
 async def qso_query_by_log(*,

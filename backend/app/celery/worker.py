@@ -7,7 +7,7 @@ from app.core.config import RABBITMQ_URL, DATABASE_URL
 from app.models.task import TaskResult
 from app.models.qso_log import QsoLogInDB
 from app.db.tasks import connect_to_db
-from app.db.repositories.qso import QsoRepository
+from app.db.repositories.qso import QsoRepository, DuplicateQsoError
 from app.utils.adif import parse_adif
 
 celery_app = Celery(__name__)
@@ -37,8 +37,13 @@ def task_adif_import(*, file_path: str, log: QsoLogInDB) -> bool:
     async def _import():
         db = await connect_to_db()
         qso_repository = QsoRepository(db)
+        qso_dupes, qso_new = 0, 0
         for qso in parse_adif(file_path, log_settings=log.dict(), qso_errors=qso_errors):
-            await qso_repository.create_qso(new_qso=qso, log_id=log.id)
+            try:
+                await qso_repository.create_qso(new_qso=qso, log_id=log.id)
+                qso_new += 1
+            except DuplicateQsoError:
+                qso_dupes += 1
+        return {'invalid': len(qso_errors), 'duplicates': qso_dupes, 'new': qso_new}
 
-    asyncio.run(_import())
-    return qso_errors
+    return asyncio.run(_import())
