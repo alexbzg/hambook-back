@@ -80,7 +80,9 @@ async def qso_query_by_log(*,
 	qso_repo: QsoRepository = Depends(get_repository(QsoRepository)),
     callsign_search: Optional[constr(to_upper=True, min_length=2)] = None,
     band: Optional[Band] = None,
-    qso_mode: Optional[QsoMode] = None
+    qso_mode: Optional[QsoMode] = None, 
+    limit: Optional[int] = 50,
+    offset: Optional[int] = None
 ) -> List[QsoPublic]:
 
     if callsign_search:
@@ -90,7 +92,9 @@ async def qso_query_by_log(*,
             log_id=log_id, 
             callsign_search=callsign_search, 
             band=band, 
-            qso_mode=qso_mode)
+            qso_mode=qso_mode,
+            limit=limit,
+            offset=offset)
 
     if not qso:
         raise HTTPException(

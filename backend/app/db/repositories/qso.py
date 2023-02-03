@@ -54,7 +54,8 @@ GET_QSO_BY_LOG_ID_QUERY = """
         (cast(:qso_mode as text) is null or :qso_mode = qso_mode) and
         (cast(:date_begin as timestamp) is null or :date_begin < qso_datetime) and
         (cast(:date_end as timestamp) is null or :date_end + interval '1 day' > qso_datetime)
-    order by id desc;
+    order by id desc 
+    limit :limit offset :offset;
 """
 
 GET_CALLSIGNS_BY_LOG_ID_QUERY = """
@@ -107,7 +108,10 @@ class QsoRepository(BaseRepository):
         band: Optional[Band] = None,
         qso_mode: Optional[QsoMode] = None,
         date_begin: Optional[date] = None,
-        date_end: Optional[date] = None ) -> List[QsoInDB]:
+        date_end: Optional[date] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None
+        ) -> List[QsoInDB]:
         qsos = await self.db.fetch_all(query=GET_QSO_BY_LOG_ID_QUERY, 
                 values={
                     "log_id": log_id,
@@ -115,7 +119,9 @@ class QsoRepository(BaseRepository):
                     "band": band,
                     "qso_mode": qso_mode,
                     "date_begin": date_begin,
-                    "date_end": date_end
+                    "date_end": date_end,
+                    "limit": limit,
+                    "offset": offset
                     })
 
         if not qsos:
