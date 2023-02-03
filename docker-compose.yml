@@ -26,6 +26,7 @@ services:
       - /var/log/hambook-dev:/backend/logs
       - /var/www/hambook-dev-public:/backend/public
     command: celery --app app.celery.worker worker --loglevel=info --logfile=/backend/logs/celery.log
+      #command: celery --app app.celery.worker worker --loglevel=info
     env_file:
       - ./backend/.env
     depends_on:

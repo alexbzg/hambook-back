@@ -66,10 +66,14 @@ def upgrade() -> None:
             RETURNS TRIGGER AS
         $BODY$
         BEGIN
-          if exists (select from qso where qso.callsign = new.callsign and qso.log_id = new.log_id 
-            and qso.qso_mode = new.qso_mode and qso.band = new.band and 
-            qso.band = new.band and qso.qso_datetime > new.qso_datetime - interval '5 minutes' and 
-			qso.qso_datetime < new.qso_datetime + interval '5 minutes')
+          if exists (select from qso 
+                where qso.callsign = new.callsign and 
+                    qso.log_id = new.log_id and 
+                    qso.id <> new.id and 
+                    qso.qso_mode = new.qso_mode and 
+                    qso.band = new.band and 
+                    qso.qso_datetime > new.qso_datetime - interval '5 minutes' and 
+			        qso.qso_datetime < new.qso_datetime + interval '5 minutes')
 		  then
 			  raise exception using
 					errcode='HB001',

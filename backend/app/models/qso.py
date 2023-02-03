@@ -22,6 +22,12 @@ class QsoMode(StrEnum):
     SSB = 'SSB'
     FT4 = 'FT4'
     FT8 = 'FT8'
+    RTTY = 'RTTY'
+    PSK = 'PSK'
+    PSK31 = 'PSK31'
+    PSK63 = 'PSK63'
+    JT9 = 'JT9'
+    JT65 = 'JT65'
 
 class QsoExtraField(StrEnum):
     CNTY = "CNTY"

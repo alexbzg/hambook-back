@@ -32,9 +32,8 @@ def get_task_status(task_id: str) -> TaskResult:
 @celery_app.task(name="adif_import")
 def task_adif_import(*, file_path: str, log: QsoLogInDB) -> bool:
 
-    qso_errors = []
-
     async def _import():
+        qso_errors, qso_dupes, qso_new = [], 0, 0
         db = await connect_to_db()
         qso_repository = QsoRepository(db)
         qso_dupes, qso_new = 0, 0
