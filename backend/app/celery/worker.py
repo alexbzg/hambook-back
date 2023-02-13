@@ -1,5 +1,6 @@
 import time
 import asyncio
+from collections import defaultdict
 
 from celery import Celery
 from celery.result import AsyncResult
@@ -33,7 +34,7 @@ def get_task_status(task_id: str) -> TaskResult:
 def task_adif_import(*, file_path: str, log: QsoLogInDB) -> bool:
 
     async def _import():
-        qso_errors, qso_dupes, qso_new = [], 0, 0
+        qso_errors, qso_dupes, qso_new = defaultdict(int), 0, 0
         db = await connect_to_db()
         qso_repository = QsoRepository(db)
         qso_dupes, qso_new = 0, 0
@@ -43,6 +44,6 @@ def task_adif_import(*, file_path: str, log: QsoLogInDB) -> bool:
                 qso_new += 1
             except DuplicateQsoError:
                 qso_dupes += 1
-        return {'invalid': len(qso_errors), 'duplicates': qso_dupes, 'new': qso_new}
+        return {'invalid': qso_errors, 'duplicates': qso_dupes, 'new': qso_new}
 
     return asyncio.run(_import())

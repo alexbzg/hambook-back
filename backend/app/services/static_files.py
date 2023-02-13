@@ -44,7 +44,7 @@ async def save_file(*,
             name=name, 
             ext=get_file_extention(upload.content_type, file_type))
     async with aiofiles.open(full_path(path), 'wb') as out_file:
-        while content := await upload.read(1024):  
+        while content := await upload.read(1024 * 1024):  
             await out_file.write(content)
     return path
 

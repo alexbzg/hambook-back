@@ -26,8 +26,104 @@ class QsoMode(StrEnum):
     PSK = 'PSK'
     PSK31 = 'PSK31'
     PSK63 = 'PSK63'
+    PSK125 = 'PSK125'
     JT9 = 'JT9'
     JT65 = 'JT65'
+
+DEF_FREQS = {
+    Band._160M: {
+        QsoMode.FT8: 1840, 
+        QsoMode.FT4: 1800, 
+        QsoMode.JT65: 1838, 
+        None: 1800
+        },
+    Band._80M: {
+        QsoMode.FT8: 3573, 
+        QsoMode.FT4: 3575, 
+        QsoMode.JT65: 3570, 
+        QsoMode.CW: 3500,
+        QsoMode.SSB: 3750,
+        None: 3500
+        },
+    Band._40M: {
+        QsoMode.FT8: 7074, 
+        QsoMode.FT4: 7974.5, 
+        QsoMode.JT65: 7076, 
+        QsoMode.CW: 7000,
+        QsoMode.SSB: 7150,
+        None: 7000
+        },
+    Band._30M: {
+        QsoMode.FT8: 10136, 
+        QsoMode.FT4: 10140, 
+        QsoMode.JT65: 10138, 
+        None: 10100
+        },
+    Band._20M: {
+        QsoMode.FT8: 14074, 
+        QsoMode.FT4: 14080, 
+        QsoMode.JT65: 14076, 
+        QsoMode.CW: 14000,
+        QsoMode.SSB: 14150,
+        None: 14000
+        },
+    Band._17M: {
+        QsoMode.FT8: 18100, 
+        QsoMode.FT4: 18104, 
+        QsoMode.JT65: 18102, 
+        QsoMode.CW: 18068,
+        QsoMode.SSB: 18110,
+        None: 18068
+        },
+    Band._15M: {
+        QsoMode.FT8: 21074, 
+        QsoMode.FT4: 21140, 
+        QsoMode.JT65: 21076, 
+        QsoMode.CW: 21000,
+        QsoMode.SSB: 21200,
+        None: 21000
+        },
+    Band._12M: {
+        QsoMode.FT8: 24915, 
+        QsoMode.FT4: 24919, 
+        QsoMode.JT65: 24917, 
+        QsoMode.CW: 24890,
+        QsoMode.SSB: 24930,
+        None: 24890
+        },
+    Band._10M: {
+        QsoMode.FT8: 28074, 
+        QsoMode.FT4: 28180, 
+        QsoMode.JT65: 28076, 
+        QsoMode.CW: 28000,
+        QsoMode.SSB: 28300,
+        None: 28000
+        }
+    }
+
+def def_freq(band: Band, mode: QsoMode) -> float:
+    return DEF_FREQS[band][mode if mode in DEF_FREQS[band] else None]
+
+def freq_to_band(freq: float) -> Band:
+    if freq <= 2000:
+        return Band._160M
+    if freq <= 4000:
+        return Band._80M
+    if freq <= 7300:
+        return Band._40M
+    if freq <= 10150:
+        return Band._30M
+    if freq <= 14350:
+        return Band._20M
+    if freq <= 18168:
+        return Band._17M
+    if freq <= 21450:
+        return Band._15M
+    if freq <= 24990:
+        return Band._12M
+    if freq <= 29700:
+        return Band._10M
+    return Band._10M
 
 class QsoExtraField(StrEnum):
     CNTY = "CNTY"

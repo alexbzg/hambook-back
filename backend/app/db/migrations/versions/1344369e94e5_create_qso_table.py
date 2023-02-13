@@ -60,7 +60,7 @@ def upgrade() -> None:
         """
     )
 
-	op.execute(sa.text(
+    op.execute(sa.text(
         """
         CREATE OR REPLACE FUNCTION update_updated_at_column()
             RETURNS TRIGGER AS

@@ -26,7 +26,7 @@ depends_on = None
 
 def upgrade() -> None:
 
-    op.execute(sa.text("""CREATE SEQUENCE IF NOT EXISTS public.qso_id_seq
+    op.execute(sa.text("""CREATE SEQUENCE IF NOT EXISTS public.posts_id_seq
     INCREMENT 1
     START 1
     MINVALUE 1
@@ -34,38 +34,29 @@ def upgrade() -> None:
     CACHE 1;"""))
 
     op.create_table(
-        "qso",
+        "posts",
         sa.Column("id", sa.BigInteger, primary_key=True, 
-            server_default=sa.text("generate_id('qso_id_seq'::text)"),
+            server_default=sa.text("generate_id('posts_id_seq'::text)"),
             autoincrement=False),
-        sa.Column("log_id", sa.BigInteger, sa.ForeignKey("qso_logs.id", ondelete="CASCADE")),  
-        sa.Column("callsign", sa.Text, nullable=False, index=True),
-        sa.Column("station_callsign", sa.Text, nullable=False, index=True),
-        sa.Column("qso_datetime", sa.TIMESTAMP(timezone=True), index=True, nullable=False),
-        sa.Column("band", sa.Text, nullable=False, index=True),
-        sa.Column("freq", sa.Numeric(8, 2), nullable=False),
-        sa.Column("qso_mode", sa.Text, nullable=False, index=True),
-        sa.Column("rst_s", sa.SmallInteger, nullable=False, server_default=sa.text('599')),
-        sa.Column("rst_r", sa.SmallInteger, nullable=False, server_default=sa.text('599')),
-        sa.Column("name", sa.Text),
-        sa.Column("qth", sa.Text),
-        sa.Column("gridsquare", sa.Text),
-        sa.Column("comment", sa.Text),
-        sa.Column("extra", JSONB),
+        sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE")),  
+        sa.Column("title", sa.Text, nullable=False, index=True),
+        sa.Column("contents", sa.Text, nullable=False, index=True),
+        sa.Column("post_type", sa.SmallInteger, nullable=False, server_default=sa.text('0')),
+        sa.Column("post_visibility", sa.SmallInteger, nullable=False, server_default=sa.text('0')),
         *timestamps()
     )
     op.execute(
         """
-        CREATE TRIGGER update_qso_modtime
+        CREATE TRIGGER update_posts_modtime
             BEFORE UPDATE
-            ON qso
+            ON posts
             FOR EACH ROW
         EXECUTE PROCEDURE update_updated_at_column();
         """
     )
 
 def downgrade() -> None:
-    op.execute("""DROP SEQUENCE if exists public.qso_id_seq;""")
-    op.execute("drop table if exists qso;")
+    op.execute("""DROP SEQUENCE if exists public.posts_id_seq;""")
+    op.execute("drop table if exists posts;")
 
 

@@ -1,4 +1,4 @@
-from typing import AsyncIterator, Any, Iterator, List
+from typing import AsyncIterator, Any, Iterator, List, Dict
 from decimal import Decimal
 import time
 import logging
@@ -7,7 +7,8 @@ from datetime import datetime
 
 import chardet
 
-from app.models.qso import QsoBase
+from app.models.qso import QsoBase, QsoMode, Band, def_freq, freq_to_band
+from app.models.core import FullCallsign
 
 def adif_field(name: str, data: Any) -> str:
     dataStr = str(data) if data else ''
@@ -35,7 +36,7 @@ Logs generated @ {time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())}
             yield ' '.join([adif_field(field, value) for field, value in qso.extra.items()])
         yield " <EOR>\n"
 
-def parse_adif(file_path: str, log_settings: dict, qso_errors: List) -> Iterator[QsoBase]:
+def parse_adif(file_path: str, log_settings: dict, qso_errors: Dict) -> Iterator[QsoBase]:
     re_field = re.compile(r"<(\w+):(\d+):?\w*>")
     re_digits = re.compile(r"\D.*")
 
@@ -81,17 +82,51 @@ def parse_adif(file_path: str, log_settings: dict, qso_errors: List) -> Iterator
                                 qso_fields[name] = qso_line[field_start : field_start + int(length)]
                         try:
                             qso_data = {}
-                            qso_data['callsign'] = qso_fields.get("CALL")
+                            try:
+                                qso_data['callsign'] = FullCallsign(qso_fields.get("CALL"))
+                            except Exception:
+                                qso_errors['Missing or invalif field (CALL)'] += 1
+                                continue
                             qso_time = qso_fields.get("TIME_ON") or qso_fields.get("TIME_OFF")
+                            if not qso_time:
+                                qso_errors['Missing or invalif field (TIME_ON, TIME_OFF)'] += 1
+                                continue
                             datetime_format = '%Y%m%d %H%M%S' if len(qso_time) == 6 else '%Y%m%d %H%M'
-                            qso_data['qso_datetime'] = datetime.strptime(
-                                    f'{qso_fields.get("QSO_DATE")} {qso_time}',
-                                    datetime_format)
-                            qso_data['band'] = qso_fields.get("BAND")
+                            try:
+                                qso_data['qso_datetime'] = datetime.strptime(
+                                        f'{qso_fields.get("QSO_DATE")} {qso_time}',
+                                        datetime_format)
+                            except Exception:
+                                qso_errors['Missing or invalid field (QSO_DATE)'] += 1
+                                continue
                             qso_data['station_callsign'] = (qso_fields.get("STATION_CALLSIGN") or 
                                     log_settings.get('callsign'))
-                            qso_data['freq'] = Decimal(qso_fields.get("FREQ"))*1000
-                            qso_data['qso_mode'] = qso_fields.get("MODE")
+
+                            try:
+                                qso_data['qso_mode'] = QsoMode(qso_fields.get("MODE"))
+                            except Exception:
+                                qso_errors['Missing or invalid field (MODE)'] += 1
+                                continue
+
+                            try:
+                                qso_data['band'] = Band(qso_fields.get("BAND"))
+                            except Exception:
+                                qso_data['band'] = None
+
+                            try:
+                                qso_data['freq'] = Decimal(qso_fields.get("FREQ"))*1000
+                            except Exception:
+                                qso_data['freq'] = None
+
+                            if not qso_data['freq']:
+                                if qso_data['band']:
+                                    qso_data['freq'] = def_freq(qso_data['band'], qso_data['qso_mode'])
+                                else:
+                                    qso_errors['Missing or invalid field (BAND, FREQ)'] += 1
+                                    continue
+                            if not qso_data['band']:
+                                qso_data['band'] = freq_to_band(qso_data['freq'])
+ 
                             qso_data['rst_r'] = get_rst(qso_fields.get("RST_RCVD"))
                             qso_data['rst_s'] = get_rst(qso_fields.get("RST_SENT"))
                             qso_data['extra'] = {field: value for field, value in qso_fields.items() 
@@ -102,5 +137,4 @@ def parse_adif(file_path: str, log_settings: dict, qso_errors: List) -> Iterator
                         except Exception as exc:
                             logging.exception(exc)
                             logging.error(qso_line)
-                            qso_errors.append((qso_line, str(exc)))
 
