@@ -1,6 +1,8 @@
 import time
 import asyncio
 from collections import defaultdict
+from typing import Dict
+import logging
 
 from celery import Celery
 from celery.result import AsyncResult
@@ -31,7 +33,7 @@ def get_task_status(task_id: str) -> TaskResult:
     return TaskResult(id=task_id, status=task_result.status, result=result) 
 
 @celery_app.task(name="adif_import")
-def task_adif_import(*, file_path: str, log: QsoLogInDB) -> bool:
+def task_adif_import(*, file_path: str, log: QsoLogInDB) -> Dict:
 
     async def _import():
         qso_errors, qso_dupes, qso_new = defaultdict(int), 0, 0
@@ -44,6 +46,11 @@ def task_adif_import(*, file_path: str, log: QsoLogInDB) -> bool:
                 qso_new += 1
             except DuplicateQsoError:
                 qso_dupes += 1
-        return {'invalid': qso_errors, 'duplicates': qso_dupes, 'new': qso_new}
+            except Exception as exc:
+                logging.exception(exc)
+                logging.error(qso.dict())
+                qso_errors['Unknown error'] += 1
+
+        return {'invalid': list(qso_errors.items()), 'duplicates': qso_dupes, 'new': qso_new}
 
     return asyncio.run(_import())

@@ -29,6 +29,9 @@ class QsoMode(StrEnum):
     PSK125 = 'PSK125'
     JT9 = 'JT9'
     JT65 = 'JT65'
+    FM = 'FM'
+    DIGI = 'DIGI'
+    T10 = 'T10'
 
 DEF_FREQS = {
     Band._160M: {
