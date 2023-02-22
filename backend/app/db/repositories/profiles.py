@@ -8,31 +8,37 @@ from app.models.media import MediaType
 
 
 CREATE_PROFILE_FOR_USER_QUERY = """
-    INSERT INTO profiles (full_name, address, phone, current_callsign, prev_callsigns, 
-        birthdate, bio, user_id)
-    VALUES (:full_name, :address, :phone, :current_callsign, :prev_callsigns, :birthdate, :bio, 
-		:user_id)
-    RETURNING id, full_name, address, default_image, current_callsign, prev_callsigns, birthdate, bio, 
-		user_id, created_at, updated_at;
+    INSERT INTO profiles (first_name, last_name, country, region, city, zip_code, address, 
+        phone, current_callsign, prev_callsigns,birthdate, bio, user_id)
+    VALUES (:first_name, :last_name, :country, :region, :city, :zip_code, :address, :phone, 
+        :current_callsign, :prev_callsigns, :birthdate, :bio, :user_id)
+    RETURNING id, first_name, last_name, country, region, city, zip_code, address, default_image, 
+        current_callsign, prev_callsigns, birthdate, bio, user_id, created_at, updated_at;
 """
 
 GET_PROFILE_BY_USER_ID_QUERY = """
-    SELECT id, full_name, address, phone, current_callsign, prev_callsigns, birthdate, bio, 
-		user_id, created_at, updated_at
+    SELECT id, first_name, last_name, country, region, city, zip_code, address, phone, 
+        current_callsign, prev_callsigns, birthdate, bio, ser_id, created_at, updated_at
     FROM profiles
     WHERE user_id = :user_id;
 """
 
 GET_PROFILE_BY_CALLSIGN_QUERY = """
-    SELECT id, full_name, address, phone, current_callsign, prev_callsigns, birthdate, bio, 
-		user_id, created_at, updated_at
+    SELECT id, first_name, last_name, country, region, city, zip_code, address, phone, 
+        current_callsign, prev_callsigns, birthdate, bio, user_id, created_at, updated_at
     FROM profiles
     WHERE current_callsign = :callsign;
 """
 
 UPDATE_PROFILE_QUERY = """
     UPDATE profiles
-    SET full_name   		= :full_name,
+    SET 
+        first_name          = :first_name,
+        last_name           = :last_name, 
+        country             = :country, 
+        region              = :region, 
+        city                = :city, 
+        zip_code            = :zip_code,
 		address				= :address,
         phone               = :phone,
 		default_image 		= :default_image, 
@@ -41,8 +47,9 @@ UPDATE_PROFILE_QUERY = """
 		birthdate			= :birthdate,
 		bio					= :bio 
     WHERE user_id = :user_id
-    RETURNING id, full_name, address, phone, default_image, current_callsign, prev_callsigns, birthdate, bio, 
-		user_id, created_at, updated_at;
+    RETURNING id, first_name, last_name, country, region, city, zip_code, address, phone, 
+        default_image, current_callsign, prev_callsigns, birthdate, bio, user_id, 
+        created_at, updated_at;
 """
 
 class ProfilesRepository(BaseRepository):

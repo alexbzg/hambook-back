@@ -7,7 +7,12 @@ from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel, Callsig
 from app.models.media import MediaPublic
 
 class ProfileBase(CoreModel):
-    full_name: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    country: Optional[int]
+    region: Optional[int]
+    city: Optional[str]
+    zip_code: Optional[str]
     address: Optional[str]
     phone: Optional[Phone]
     current_callsign: Optional[Callsign]
