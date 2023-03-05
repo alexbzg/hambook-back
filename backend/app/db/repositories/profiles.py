@@ -18,7 +18,7 @@ CREATE_PROFILE_FOR_USER_QUERY = """
 
 GET_PROFILE_BY_USER_ID_QUERY = """
     SELECT id, first_name, last_name, country, region, city, zip_code, address, phone, 
-        current_callsign, prev_callsigns, birthdate, bio, ser_id, created_at, updated_at
+        current_callsign, prev_callsigns, birthdate, bio, user_id, created_at, updated_at
     FROM profiles
     WHERE user_id = :user_id;
 """
