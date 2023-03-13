@@ -9,8 +9,9 @@ from app.models.media import MediaPublic
 class ProfileBase(CoreModel):
     first_name: Optional[str]
     last_name: Optional[str]
-    country: Optional[int]
-    region: Optional[int]
+    country: Optional[str]
+    region: Optional[str]
+    district: Optional[str]
     city: Optional[str]
     zip_code: Optional[str]
     address: Optional[str]
