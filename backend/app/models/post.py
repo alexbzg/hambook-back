@@ -16,8 +16,8 @@ class PostVisibility(IntEnum):
 class PostBase(CoreModel):
     post_type: PostType
     visibility: PostVisibility
-    title: str
-    contents: str
+    title: Optional[str]
+    contents: Optional[str]
 
 class PostUpdate(PostBase, IDModelMixin):
     user_id: int

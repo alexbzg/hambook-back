@@ -17,17 +17,17 @@ import logging
 REGISTER_NEW_USER_QUERY = """
     INSERT INTO users (email, password, salt)
     VALUES (:email, :password, :salt)
-    RETURNING id, email, email_verified, password, salt;
+    RETURNING id, email, email_verified, password, salt, is_admin;
 """
 
 GET_USER_BY_EMAIL_QUERY = """
-    SELECT id, email, email_verified, password, salt, created_at, updated_at
+    SELECT id, email, email_verified, password, salt, created_at, updated_at, is_admin
     FROM users
     WHERE email = :email;
 """
 
 GET_USER_BY_ID_QUERY = """
-    SELECT id, email, email_verified, password, salt, created_at, updated_at
+    SELECT id, email, email_verified, password, salt, created_at, updated_at, is_admin
     FROM users
     WHERE id = :id;
 """
@@ -36,7 +36,7 @@ UPDATE_USER_QUERY = """
     UPDATE users 
     SET email_verified = :email_verified, password = :password, salt = :salt
     WHERE id = :id
-    RETURNING id, email, email_verified, password, salt, created_at, updated_at;
+    RETURNING id, email, email_verified, password, salt, created_at, updated_at, is_admin;
 """
 
 class UsersRepository(BaseRepository):

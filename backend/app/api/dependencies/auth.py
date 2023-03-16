@@ -45,4 +45,9 @@ def get_current_active_user(
 
     return current_user
 
+def get_current_optional_user(
+    token_type: str = 'bearer',
+    current_user: UserInDB = Depends(get_user_from_token)) -> Optional[UserInDB]:
+
+    return current_user
 

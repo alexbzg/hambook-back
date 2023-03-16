@@ -1,89 +1,87 @@
 from typing import List
 
 from app.db.repositories.base import BaseRepository
-from app.models.qso_log import QsoLogBase, QsoLogInDB
+from app.models.qso_log import PostBase, PostInDB, PostUpdate, PostPublic
 from app.models.user import UserInDB
 
-CREATE_QSO_LOG_QUERY = """
-    INSERT INTO qso_logs (callsign,  description, user_id)
-    VALUES (:callsign, :description, :user_id)
-    RETURNING id, callsign, description, user_id, extra_fields;
+CREATE_POST_QUERY = """
+    INSERT INTO posts (post_type, visibility, title,  contents, user_id)
+    VALUES (:post_type, :visibility, :title,  :contents, :user_id)
+    RETURNING id, post_type, visibility, title,  contents, user_id, created_at, updated_at;
 """
 
-UPDATE_QSO_LOG_QUERY = """
+UPDATE_POST_QUERY = """
     UPDATE qso_logs
     set 
-        description = :description, 
-        callsign = :callsign,
-        extra_fields = :extra_fields
+        post_type       = :post_type, 
+        visibility      = :visibility,
+        title           = :title,
+        contents        = :contents,
     WHERE id = :id
-    RETURNING id, callsign, description, user_id, extra_fields;
+    RETURNING id, post_type, visibility, title,  contents, user_id, created_at, updated_at;
 """
 
 
-DELETE_QSO_LOG_QUERY = """
-    DELETE from qso_logs
+DELETE_POST_QUERY = """
+    DELETE from posts
     WHERE id = :id;
 """
 
-GET_QSO_LOGS_BY_USER_ID_QUERY = """
-    SELECT id, callsign, description, user_id, extra_fields,
-       (SELECT count(*) from qso 
-            WHERE log_id = qso_logs.id) as qso_count
-    FROM qso_logs
+GET_POSTS_BY_USER_ID_QUERY = """
+    SELECT 
+        id, post_type, visibility, title,  contents, user_id, created_at, updated_at
+    FROM posts
     WHERE user_id = :user_id
-    order by id;
+    order by id desc;
 """
 
-GET_QSO_LOG_BY_ID_QUERY = """
-    SELECT id, callsign, description, user_id, extra_fields,
-       (SELECT count(*) from qso 
-            WHERE log_id = :id) as qso_count
-    FROM qso_logs
+GET_POST_BY_ID_QUERY = """
+    SELECT 
+        id, post_type, visibility, title,  contents, user_id, created_at, updated_at
+    FROM posts
     WHERE id = :id;
 """
 
-class QsoLogsRepository(BaseRepository):
+class PostsRepository(BaseRepository):
 
-    async def create_log(self, *, 
-        new_log: QsoLogBase,
-        requesting_user: UserInDB) -> QsoLogInDB:
+    async def create_post(self, *, 
+        new_post: PostBase,
+        requesting_user: UserInDB) -> PostInDB:
 
-        created_log = await self.db.fetch_one(query=CREATE_QSO_LOG_QUERY, 
-                values={**new_log.dict(exclude={"extra_fields"}), "user_id": int(requesting_user.id)})
+        created_post = await self.db.fetch_one(query=CREATE_POST_QUERY, 
+                values={**new_post.dict(), "user_id": int(requesting_user.id)})
 
-        return QsoLogInDB(**created_log)
+        return PostInDB(**created_post)
 
-    async def get_logs_by_user_id(self, *, user_id: int) -> List[QsoLogInDB]:
-        qso_logs = await self.db.fetch_all(query=GET_QSO_LOGS_BY_USER_ID_QUERY, values={"user_id": user_id})
+    async def get_posts_by_user_id(self, *, user_id: int) -> List[PostInDB]:
+        posts = await self.db.fetch_all(query=GET_POSTS_BY_USER_ID_QUERY, values={"user_id": user_id})
 
-        if not qso_logs:
+        if not posts:
             return None
 
-        return [QsoLogInDB(**qso_log) for qso_log in qso_logs]
+        return [PostInDB(**post) for post in posts]
 
-    async def get_log_by_id(self, *, id: int) -> QsoLogInDB:
-        qso_log = await self.db.fetch_one(query=GET_QSO_LOG_BY_ID_QUERY, 
-                values={"id": id})
+    async def get_post_by_id(self, *, id: int) -> PostInDB:
+        post = await self.db.fetch_one(query=GET_POST_BY_ID_QUERY, values={"id": id})
 
-        if not qso_log:
+        if not post:
             return None
 
-        return QsoLogInDB(**qso_log)
+        return PostInDB(**qso_log)
 
 
-    async def update_log(self, *, log: QsoLogInDB, log_update: QsoLogBase) -> QsoLogInDB:
+    async def update_post(self, *, post: PostInDB, post_update: PostUpdate) -> PostInDB:
 
-        update_params = log.copy(update=log_update.dict(exclude_unset=True))
-        updated_qso_log = await self.db.fetch_one(
-            query=UPDATE_QSO_LOG_QUERY,
+        update_params = post.copy(update=post_update.dict(exclude_unset=True))
+        updated_post = await self.db.fetch_one(
+            query=UPDATE_POST_QUERY,
             values=update_params.dict(
-                exclude={"user_id", "qso_count", "created_at", "updated_at"}),
+                exclude={"user_id", "created_at", "updated_at"}),
         )
 
-        return QsoLogInDB(**updated_qso_log)
+        return PostInDB(**updated_post)
 
 
-    async def delete_log(self, *, id: int) -> None:
-        await self.db.execute(query=DELETE_QSO_LOG_QUERY, values={"id": id})
+    async def delete_post(self, *, id: int) -> None:
+        await self.db.execute(query=DELETE_POST_QUERY, values={"id": id})
 

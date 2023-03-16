@@ -42,7 +42,9 @@ class UserInDB(IDModelMixin, DateTimeModelMixin, UserBase):
     """
     password: constr(min_length=8, max_length=64)
     salt: str
+    is_admin: bool
 
 class UserPublic(IDStrModelMixin, DateTimeModelMixin, UserBase):
     access_token: Optional[AccessToken]
     profile: Optional[ProfilePublic]
+    is_admin: bool

@@ -71,6 +71,7 @@ $BODY$;
             autoincrement=False),
         sa.Column("email", sa.VARCHAR(64), nullable=False, unique=True),
         sa.Column("email_verified", sa.Boolean, nullable=False, server_default=sa.text('false')),
+        sa.Column("is_admin", sa.Boolean, nullable=False, server_default=sa.text('false')),
         sa.Column("password", sa.VARCHAR(256), nullable=False),
 		sa.Column("salt", sa.VARCHAR(256), nullable=False),
 		*timestamps()
