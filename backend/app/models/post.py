@@ -19,10 +19,6 @@ class PostBase(CoreModel):
     title: Optional[str]
     contents: Optional[str]
 
-class PostUpdate(PostBase, IDModelMixin):
-    user_id: int
-    pass
-
 class PostInDB(PostUpdate, DateTimeModelMixin):
     pass
 

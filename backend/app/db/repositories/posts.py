@@ -1,7 +1,7 @@
 from typing import List
 
 from app.db.repositories.base import BaseRepository
-from app.models.qso_log import PostBase, PostInDB, PostUpdate, PostPublic
+from app.models.qso_log import PostBase, PostInDB, PostUpdate, PostPublic, PostVisibility
 from app.models.user import UserInDB
 
 CREATE_POST_QUERY = """
@@ -31,7 +31,7 @@ GET_POSTS_BY_USER_ID_QUERY = """
     SELECT 
         id, post_type, visibility, title,  contents, user_id, created_at, updated_at
     FROM posts
-    WHERE user_id = :user_id
+    WHERE user_id = :user_id and visibility >= :visibility
     order by id desc;
 """
 
@@ -53,8 +53,11 @@ class PostsRepository(BaseRepository):
 
         return PostInDB(**created_post)
 
-    async def get_posts_by_user_id(self, *, user_id: int) -> List[PostInDB]:
-        posts = await self.db.fetch_all(query=GET_POSTS_BY_USER_ID_QUERY, values={"user_id": user_id})
+    async def get_posts_by_user_id(self, *, 
+        user_id: int,
+        visibility: PostVisibilty = PostVisibility.private) -> List[PostInDB]:
+        posts = await self.db.fetch_all(query=GET_POSTS_BY_USER_ID_QUERY, 
+                values={"user_id": user_id, 'visibility': visibility}})
 
         if not posts:
             return None
