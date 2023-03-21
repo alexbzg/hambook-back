@@ -59,7 +59,6 @@ async def update_post(*,
 @router.get("/", response_model=List[PostPublic], name="posts:query-by-user")
 async def posts_query_by_user(*,
     user_id: int,
-	current_user: Optional[UserInDB] = Depends(get_current_optional_user),
     visibility: PostVisibility = Depends(get_visibility_level),
 	posts_repo: PostsRepository = Depends(get_repository(PostsRepository)),    
 ) -> List[PostPublic]:

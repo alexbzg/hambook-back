@@ -11,12 +11,12 @@ CREATE_POST_QUERY = """
 """
 
 UPDATE_POST_QUERY = """
-    UPDATE qso_logs
+    UPDATE posts
     set 
         post_type       = :post_type, 
         visibility      = :visibility,
         title           = :title,
-        contents        = :contents,
+        contents        = :contents
     WHERE id = :id
     RETURNING id, post_type, visibility, title,  contents, user_id, created_at, updated_at;
 """
@@ -70,7 +70,7 @@ class PostsRepository(BaseRepository):
         if not post:
             return None
 
-        return PostInDB(**qso_log)
+        return PostInDB(**post)
 
 
     async def update_post(self, *, post: PostInDB, post_update: PostBase) -> PostInDB:

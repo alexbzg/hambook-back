@@ -11,7 +11,7 @@ from app.models.user import UserInDB
 async def get_post_by_id(post_id: int, 
     posts_repo: PostsRepository = Depends(get_repository(PostsRepository))) -> Optional[PostInDB]:
 
-    post = await posts_repo.get_post_id(id=post_id)
+    post = await posts_repo.get_post_by_id(id=post_id)
 
     if not post:
         raise HTTPException(
@@ -44,16 +44,12 @@ def get_visibility_level(user_id: int,
 
     return PostVisibility.logged_users
 
-def get_post_author_id(post: PostInDB) -> int:
-    return post.user_id
-
-def get_post_for_view(post_id: int, 
+async def get_post_for_view(post_id: int, 
     post: PostInDB = Depends(get_post_by_id),
 	current_user: Optional[UserInDB] = Depends(get_current_optional_user),
-    user_id: int = Depends(get_post_author_id),
-    visibility: PostVisibility = Depends(get_visibility_level)) -> PostInDB:
+    ) -> PostInDB:
 
-    if visibility > post.visibility:
+    if get_visibility_level(post.user_id, current_user) > post.visibility:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Permission denied"

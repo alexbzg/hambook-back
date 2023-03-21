@@ -14,8 +14,8 @@ class PostVisibility(IntEnum):
     everybody = 3
 
 class PostBase(CoreModel):
-    post_type: PostType
-    visibility: PostVisibility
+    post_type: Optional[PostType]
+    visibility: Optional[PostVisibility]
     title: Optional[str]
     contents: Optional[str]
 
