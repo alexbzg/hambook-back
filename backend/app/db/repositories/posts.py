@@ -1,7 +1,7 @@
 from typing import List
 
 from app.db.repositories.base import BaseRepository
-from app.models.qso_log import PostBase, PostInDB, PostUpdate, PostPublic, PostVisibility
+from app.models.post import PostBase, PostInDB, PostPublic, PostVisibility
 from app.models.user import UserInDB
 
 CREATE_POST_QUERY = """
@@ -55,9 +55,9 @@ class PostsRepository(BaseRepository):
 
     async def get_posts_by_user_id(self, *, 
         user_id: int,
-        visibility: PostVisibilty = PostVisibility.private) -> List[PostInDB]:
+        visibility: PostVisibility = PostVisibility.private) -> List[PostInDB]:
         posts = await self.db.fetch_all(query=GET_POSTS_BY_USER_ID_QUERY, 
-                values={"user_id": user_id, 'visibility': visibility}})
+                values={"user_id": user_id, 'visibility': visibility})
 
         if not posts:
             return None
@@ -73,7 +73,7 @@ class PostsRepository(BaseRepository):
         return PostInDB(**qso_log)
 
 
-    async def update_post(self, *, post: PostInDB, post_update: PostUpdate) -> PostInDB:
+    async def update_post(self, *, post: PostInDB, post_update: PostBase) -> PostInDB:
 
         update_params = post.copy(update=post_update.dict(exclude_unset=True))
         updated_post = await self.db.fetch_one(

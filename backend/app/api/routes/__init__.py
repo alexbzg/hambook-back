@@ -7,6 +7,7 @@ from app.api.routes.qso_logs import router as qso_logs_router
 from app.api.routes.qso import router as qso_router
 from app.api.routes.callsigns import router as callsigns_router
 from app.api.routes.tasks import router as tasks_router
+from app.api.routes.posts import router as posts_router
 
 from app.api.routes.test import router as test_router
 
@@ -19,6 +20,7 @@ router.include_router(qso_logs_router, prefix="/qso/logs", tags=["qso-logs"])
 router.include_router(qso_router, prefix="/qso", tags=["qso"])
 router.include_router(callsigns_router, prefix="/callsigns", tags=["callsigns"])
 router.include_router(tasks_router, prefix="/tasks", tags=["tasks"])
+router.include_router(posts_router, prefix="/posts", tags=["posts"])
 
 router.include_router(test_router, prefix="/test", tags=["test"])
 

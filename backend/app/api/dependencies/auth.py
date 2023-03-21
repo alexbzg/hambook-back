@@ -12,7 +12,7 @@ from app.services import auth_service
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{API_PREFIX}/users/login/token/")
-
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl=f"{API_PREFIX}/users/login/token/", auto_error=False)
 
 async def get_user_from_token(
     *,
@@ -32,6 +32,26 @@ async def get_user_from_token(
 
     return user
 
+async def get_user_from_token_optional(
+    *,
+    token: Optional[str] = Depends(oauth2_scheme_optional),
+    user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+    token_type: str = 'bearer'
+) -> Optional[UserInDB]:
+    user = None
+    if token:
+        try:
+            userid = auth_service.get_userid_from_token(
+                    token=token, 
+                    secret_key=str(SECRET_KEY),
+                    token_type=token_type,)
+            user = await user_repo.get_user_by_id(userid=userid)
+        except Exception as e:
+            logging.exception(e)
+
+        return user
+
+
 
 def get_current_active_user(
     token_type: str = 'bearer',
@@ -47,7 +67,7 @@ def get_current_active_user(
 
 def get_current_optional_user(
     token_type: str = 'bearer',
-    current_user: UserInDB = Depends(get_user_from_token)) -> Optional[UserInDB]:
+    current_user: Optional[UserInDB] = Depends(get_user_from_token_optional)) -> Optional[UserInDB]:
 
     return current_user
 

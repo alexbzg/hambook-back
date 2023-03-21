@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import Depends, HTTPException, status
 
 from app.api.dependencies.database import get_repository
@@ -34,7 +35,7 @@ def get_post_for_update(post_id: int,
     return post
 
 def get_visibility_level(user_id: int, 
-    current_user: UserInDB = Depends(get_current_optional_user)) -> PostVisibility:
+    current_user: Optional[UserInDB] = Depends(get_current_optional_user)) -> PostVisibility:
     if not current_user:
         return PostVisibility.everybody
 
@@ -48,7 +49,7 @@ def get_post_author_id(post: PostInDB) -> int:
 
 def get_post_for_view(post_id: int, 
     post: PostInDB = Depends(get_post_by_id),
-	current_user: UserInDB = Depends(get_current_optional_user),
+	current_user: Optional[UserInDB] = Depends(get_current_optional_user),
     user_id: int = Depends(get_post_author_id),
     visibility: PostVisibility = Depends(get_visibility_level)) -> PostInDB:
 
