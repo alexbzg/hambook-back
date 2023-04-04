@@ -2,6 +2,8 @@ version: '3.7'
 
 services:
   server:
+    restart: always
+    container_name: server
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -11,13 +13,40 @@ services:
     command: uvicorn app.api.server:app --reload --workers 1 --host 0.0.0.0 --port 8000
     env_file:
       - ./backend/.env
-    ports:
-      - 8000:8000
+    expose:
+      - "8000"
+    networks:
+      - public
+      - default
     depends_on:
       - db
       - celery_worker
 
+  rev_proxy:
+    restart: always
+    image: nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+      - /var/www/hambook-dev-public:/var/www/hambook-dev-public
+    environment:
+      - VIRTUAL_HOST=dev.hambook.net
+      - VIRTUAL_PORT=80
+      - LETSENCRYPT_HOST=dev.hambook.net
+      - LETSENCRYPT_EMAIL=alexbzg@gmail.com
+    expose:
+      - "80"
+    ports:
+      - 801:80
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - public
+      - default
+    depends_on:
+      - server
+
   celery_worker:
+    restart: always
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -40,21 +69,22 @@ services:
 
 
   db:
+    restart: always
     image: postgres:13-alpine
     volumes:
       - postgres_data:/var/lib/postgresql/data/
     env_file:
       - ./backend/.env
-    expose:
-      - 5432
-    ports:
-      - 5433:5432
+        #expose:
+        #- 5432
+        #ports:
+        #- 5433:5432
 
   rabbitmq:
     restart: always
     image: rabbitmq:3.11-alpine
-    ports:
-      - 5672:5672
+      #    ports:
+      #- 5672:5672
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
         
@@ -62,4 +92,10 @@ volumes:
     postgres_data:
     rabbitmq_data:
 
-
+networks:
+    default:
+        name: hambook_dev
+        internal: true
+    public:
+        name: public
+        external: true

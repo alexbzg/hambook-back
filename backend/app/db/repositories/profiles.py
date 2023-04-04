@@ -10,7 +10,7 @@ from app.models.media import MediaType
 CREATE_PROFILE_FOR_USER_QUERY = """
     INSERT INTO profiles (first_name, last_name, country, region, district, 
         city, zip_code, address, phone, current_callsign, prev_callsigns,birthdate, bio, user_id)
-    VALUES (:first_name, :last_name, :country, :region, :city, :zip_code, :address, :phone, 
+    VALUES (:first_name, :last_name, :country, :region, :city, :district, :zip_code, :address, :phone, 
         :current_callsign, :prev_callsigns, :birthdate, :bio, :user_id)
     RETURNING id, first_name, last_name, country, region, district, city, zip_code, address, 
         default_image, current_callsign, prev_callsigns, birthdate, bio, user_id, 

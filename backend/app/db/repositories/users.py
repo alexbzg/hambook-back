@@ -59,7 +59,7 @@ class UsersRepository(BaseRepository):
 
     async def update_user(self, *, user: UserInDB, update_params: dict) -> UserInDB:
         update_user_params = user.copy(update=update_params, 
-                exclude={"email", "created_at", "updated_at", "access_token", "profile"})
+                exclude={"email", "created_at", "updated_at", "access_token", "profile", "is_admin"})
         updated_user = await self.db.fetch_one(query=UPDATE_USER_QUERY, values=update_user_params.dict())
         return UserInDB(**updated_user)
 
