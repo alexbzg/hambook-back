@@ -35,8 +35,6 @@ services:
       - LETSENCRYPT_EMAIL=alexbzg@gmail.com
     expose:
       - "80"
-    ports:
-      - 801:80
     extra_hosts:
       - "host.docker.internal:host-gateway"
     networks:

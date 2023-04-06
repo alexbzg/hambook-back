@@ -42,5 +42,5 @@ def upgrade() -> None:
     )
 
 def downgrade() -> None:
-    op.execute("""DROP SEQUENCE if exists public.user_id_sec;""")
+    op.execute("""DROP SEQUENCE if exists public.media_id_sec;""")
     op.execute("drop table if exists media;")
