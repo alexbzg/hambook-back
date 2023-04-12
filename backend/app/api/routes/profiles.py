@@ -1,9 +1,10 @@
 from fastapi import Depends, APIRouter, HTTPException, Path, Body, status
+from pydantic import constr
 
 from app.api.dependencies.auth import get_current_active_user
 from app.api.dependencies.database import get_repository
 from app.models.user import UserCreate, UserInDB, UserPublic
-from app.models.core import Callsign
+from app.models.core import Callsign, CallsignModel
 from app.models.profile import ProfileUpdate, ProfilePublic
 from app.db.repositories.profiles import ProfilesRepository
 
@@ -37,6 +38,36 @@ async def update_own_profile(
 	updated_profile = await profiles_repo.update_profile(profile_update=profile_update, requesting_user=current_user)
 
 	return updated_profile
+
+@router.get("/search/{expression}", response_model=list[ProfilePublic], name="profiles:search")
+async def password_reset_request(
+    expression: constr(strip_whitespace=True, min_length=3), 
+    profiles_repo: ProfilesRepository = Depends(get_repository(ProfilesRepository)),
+    ) -> list[ProfilePublic]:
+    
+    callsign = first_name = last_name = None
+    search_results = None
+    try:
+        callsign = CallsignModel(callsign=expression).callsign
+    except ValueError:
+        pass
+
+    if not callsign:
+        if ' ' in expression:
+            first_name, last_name = expression.split()[0:2]
+        else:
+            first_name = last_name = expression
+           
+    search_results = profiles_repo.search_results.find_profiles_by_callsign_or_name(
+            classign=callsign, first_name=first_name, last_name=last_name)
+
+    if not search_results:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Profiles not found.")
+
+    return search_results
+
+
 
 
 

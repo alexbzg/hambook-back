@@ -1,3 +1,5 @@
+from typing import Optional
+
 from databases import Database
 
 from app.db.repositories.base import BaseRepository
@@ -30,6 +32,14 @@ GET_PROFILE_BY_CALLSIGN_QUERY = """
     FROM profiles
     WHERE current_callsign = :callsign;
 """
+
+FIND_PROFILES_BY_CALLSIGN_OR_NAME = """
+    SELECT id, first_name, last_name, country, region, district, city, zip_code, address, phone, 
+        current_callsign, prev_callsigns, birthdate, bio, user_id, created_at, updated_at
+    FROM profiles
+    WHERE current_callsign = :callsign or first_name = :first_name or last_name = :last_name;
+"""
+
 
 UPDATE_PROFILE_QUERY = """
     UPDATE profiles
@@ -83,6 +93,20 @@ class ProfilesRepository(BaseRepository):
             return None
 
         return await self.populate_profile(profile=ProfileInDB(**profile_record))
+
+    async def find_profiles_by_callsign_or_name(self, *, 
+        callsign: Optional[str] = None, 
+        first_name: Optional[str] = None,
+        last_name: Optional[str] = None) -> list[ProfilePublic]:
+
+        profile_records = await self.db.fetch_all(query=FIND_PROFILES_BY_CALLSIGN_OR_NAME_QUERY, 
+                values={"callsign": callsign, "first_name": first_name, "last_name": last_name})
+
+        if not profile_records:
+            return None
+
+        return [await self.populate_profile(profile=ProfileInDB(**profile_record)) for profile_record in profile_records]
+
 
     async def update_profile(self, *, 
             profile_update: ProfileUpdate, 

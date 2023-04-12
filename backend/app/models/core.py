@@ -12,6 +12,9 @@ CallsignSearch = constr(regex=r"([A-Z\d/]*\*[A-Z\d/]*|([A-Z\d]+/)?\d*[A-Z]+\d+[A
 
 Phone = constr(regex=r"\+\d{11}", strip_whitespace=True)
 
+class CallsignModel(BaseModel):
+    callsign: Callsign
+
 class FileType(IntEnum):
     media = 1
     adi = 2

@@ -172,4 +172,11 @@ async def password_reset(
 
     return {'result': 'Ok'}
     
+@router.get("/search/{expression}", response_model=list[UserPublic], name="users:search")
+async def password_reset_request(
+        expr: str, 
+        user_repo: UsersRepository = Depends(get_repository(UsersRepository)),
+        ) -> list[UserPublic]:
+        pass
+
 
