@@ -62,7 +62,7 @@ def upgrade() -> None:
 
     op.execute(sa.text(
         """
-        CREATE OR REPLACE FUNCTION update_updated_at_column()
+        CREATE OR REPLACE FUNCTION check_qso_dupes()
             RETURNS TRIGGER AS
         $BODY$
         BEGIN

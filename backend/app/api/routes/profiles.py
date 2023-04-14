@@ -8,6 +8,8 @@ from app.models.core import Callsign, CallsignModel
 from app.models.profile import ProfileUpdate, ProfilePublic
 from app.db.repositories.profiles import ProfilesRepository
 
+import logging
+
 router = APIRouter()
 
 @router.get("/{user_id:int}/", response_model=ProfilePublic, name="profiles:get-profile-by-user_id")
@@ -58,8 +60,8 @@ async def password_reset_request(
         else:
             first_name = last_name = expression
            
-    search_results = profiles_repo.search_results.find_profiles_by_callsign_or_name(
-            classign=callsign, first_name=first_name, last_name=last_name)
+    search_results = await profiles_repo.find_profiles_by_callsign_or_name(
+            callsign=callsign, first_name=first_name, last_name=last_name)
 
     if not search_results:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, 

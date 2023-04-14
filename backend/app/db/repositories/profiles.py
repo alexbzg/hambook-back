@@ -33,11 +33,13 @@ GET_PROFILE_BY_CALLSIGN_QUERY = """
     WHERE current_callsign = :callsign;
 """
 
-FIND_PROFILES_BY_CALLSIGN_OR_NAME = """
+FIND_PROFILES_BY_CALLSIGN_OR_NAME_QUERY = """
     SELECT id, first_name, last_name, country, region, district, city, zip_code, address, phone, 
         current_callsign, prev_callsigns, birthdate, bio, user_id, created_at, updated_at
     FROM profiles
-    WHERE current_callsign = :callsign or first_name = :first_name or last_name = :last_name;
+    WHERE current_callsign = :callsign 
+        or first_name = cast(:first_name as citext) 
+        or last_name = cast(:last_name as citext);
 """
 
 

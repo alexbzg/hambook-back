@@ -22,6 +22,8 @@ depends_on = None
 
 def create_users_table() -> None:
 
+    op.execute(sa.text("CREATE EXTENSION IF NOT EXISTS citext WITH SCHEMA public;"))
+
     op.execute(sa.text(
         """
         CREATE OR REPLACE FUNCTION update_updated_at_column()

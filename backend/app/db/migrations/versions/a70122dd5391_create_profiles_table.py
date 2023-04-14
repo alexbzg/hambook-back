@@ -7,6 +7,7 @@ Create Date: 2022-11-11 14:38:44.999442
 """
 from alembic import op
 import sqlalchemy as sa
+from citext import CIText
 
 import sys, pathlib
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
@@ -36,13 +37,13 @@ def upgrade() -> None:
         sa.Column("id", sa.BigInteger, primary_key=True, 
             server_default=sa.text("generate_id('profile_id_seq'::text)"),
             autoincrement=False),
-        sa.Column("fist_name", sa.Text, nullable=True),
-        sa.Column("last_name", sa.Text, nullable=True),
+        sa.Column("first_name", CIText(), nullable=True, index=True),
+        sa.Column("last_name", CIText(), nullable=True, index=True),
         sa.Column("country", sa.Text, nullable=True, index=True),
-        sa.column("region", sa.Text, nullable=True, index=True),
-        sa.column("district", sa.Text, nullable=True, index=True),
-        sa.column("city", sa.Text, nullable=True),
-        sa.column("zip_code", sa.Text, nullable=True),
+        sa.Column("region", sa.Text, nullable=True, index=True),
+        sa.Column("district", sa.Text, nullable=True, index=True),
+        sa.Column("city", sa.Text, nullable=True),
+        sa.Column("zip_code", sa.Text, nullable=True),
         sa.Column("address", sa.VARCHAR(512), nullable=True),
         sa.Column("phone", sa.CHAR(12), nullable=True),
         sa.Column("bio", sa.VARCHAR(1024), nullable=True, server_default=""),

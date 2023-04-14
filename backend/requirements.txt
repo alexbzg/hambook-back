@@ -17,6 +17,7 @@ celery==5.2.7
 # db
 databases[postgresql]==0.6.2
 SQLAlchemy==1.4.41
+sqlalchemy-citext==1.8.0
 alembic==1.5.7
 alembic_utils==0.7.8
 psycopg2==2.9.4
