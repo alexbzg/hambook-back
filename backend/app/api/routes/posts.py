@@ -73,6 +73,23 @@ async def posts_query_by_user(*,
 
     return [PostPublic(**post.dict()) for post in posts]
 
+@router.get("/world", response_model=List[PostPublic], name="posts:site")
+async def posts_site(*,
+    visibility: PostVisibility = Depends(get_visibility_level),
+	posts_repo: PostsRepository = Depends(get_repository(PostsRepository)),    
+) -> List[PostPublic]:
+
+    posts = await posts_repo.get_site_posts(visibility=visibility)
+
+    if not posts:
+        raise HTTPException(
+            status_code=HTTP_404_NOT_FOUND,
+            detail="Posts not found"
+        )
+
+    return [PostPublic(**post.dict()) for post in posts]
+
+
 @router.get("/{post_id}", response_model=PostPublic, name="posts:query-by-post-id")
 async def post_by_id(*,
     post_id: int,

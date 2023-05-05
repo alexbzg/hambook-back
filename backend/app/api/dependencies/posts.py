@@ -34,7 +34,7 @@ def get_post_for_update(post_id: int,
 
     return post
 
-def get_visibility_level(user_id: int, 
+def get_visibility_level(user_id: Optional[int] = None, 
     current_user: Optional[UserInDB] = Depends(get_current_optional_user)) -> PostVisibility:
     if not current_user:
         return PostVisibility.everybody

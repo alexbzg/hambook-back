@@ -35,6 +35,14 @@ GET_POSTS_BY_USER_ID_QUERY = """
     order by id desc;
 """
 
+GET_SITE_POSTS_QUERY = """
+    SELECT 
+        id, post_type, visibility, title,  contents, user_id, created_at, updated_at
+    FROM posts
+    WHERE post_type = 1 and visibility >= :visibility
+    order by id desc;
+"""
+
 GET_POST_BY_ID_QUERY = """
     SELECT 
         id, post_type, visibility, title,  contents, user_id, created_at, updated_at
@@ -63,6 +71,17 @@ class PostsRepository(BaseRepository):
             return None
 
         return [PostInDB(**post) for post in posts]
+
+    async def get_site_posts(self, *, 
+        visibility: PostVisibility = PostVisibility.private) -> List[PostInDB]:
+        posts = await self.db.fetch_all(query=GET_SITE_POSTS_QUERY, 
+                values={'visibility': visibility})
+
+        if not posts:
+            return None
+
+        return [PostInDB(**post) for post in posts]
+
 
     async def get_post_by_id(self, *, id: int) -> PostInDB:
         post = await self.db.fetch_one(query=GET_POST_BY_ID_QUERY, values={"id": id})
