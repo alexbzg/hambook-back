@@ -32,6 +32,12 @@ GET_MEDIA_BY_ID_QUERY = """
     WHERE id = :id;
 """
 
+SET_MEDIA_POST_ID_QUERY = """
+    UPDATE media
+    SET post_id = :post_id
+    WHERE id = :media_id;
+"""
+
 def mediaPublicFromDB(media: MediaInDB) -> MediaPublic:
     return MediaPublic(**media.copy(
         exclude={'file_path'},
@@ -102,5 +108,10 @@ class MediaRepository(BaseRepository):
             return get_url_by_path(avatar.file_path)
 
         return None
+
+    async def set_media_post_id(self, *, media_id: int, post_id: int) -> str:
+        await self.db.execute(query=SET_MEDIA_POST_ID_QUERY, 
+                values={'media_id': media_id, 'post_id': post_id})
+   
 
 

@@ -43,6 +43,7 @@ class MediaDelete(IDModelMixin):
     pass
 
 class MediaInDB(IDModelMixin, DateTimeModelMixin, MediaCreate):
+    post_id: Optional[int]
     pass
 
 class MediaPublic(DateTimeModelMixin, MediaBase):
