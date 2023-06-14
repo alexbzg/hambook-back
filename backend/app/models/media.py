@@ -9,6 +9,7 @@ from app.models.core import DateTimeModelMixin, IDModelMixin, CoreModel
 class MediaType(IntEnum):
     avatar = 1
     profile_media = 2
+    post_media = 3
 
 class MediaBase(CoreModel):
     user_id: int
@@ -25,6 +26,10 @@ class MediaUpload(MediaBase):
         if values.get('media_type') == 1:
             file_upload = values.get('file')
             if file_upload.content_type not in ('image/jpeg', 'image/png'):
+                raise ValueError('Invalid file type')
+        if values.get('media_type') == 1:
+            file_upload = values.get('file')
+            if file_upload.content_type not in ('image/jpeg', 'image/png', 'image/gif'):
                 raise ValueError('Invalid file type')
         return values 
 

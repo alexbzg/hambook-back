@@ -23,6 +23,37 @@ depends_on = None
 
 
 def upgrade() -> None:
+    
+    op.execute(sa.text("""CREATE SEQUENCE IF NOT EXISTS public.posts_id_seq
+    INCREMENT 1
+    START 1
+    MINVALUE 1
+    MAXVALUE 9223372036854775807
+    CACHE 1;"""))
+
+    op.create_table(
+        "posts",
+        sa.Column("id", sa.BigInteger, primary_key=True, 
+            server_default=sa.text("generate_id('posts_id_seq'::text)"),
+            autoincrement=False),
+        sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE")),  
+        sa.Column("title", sa.Text, nullable=False, index=True),
+        sa.Column("contents", sa.Text, nullable=False, index=True),
+        sa.Column("post_type", sa.SmallInteger, nullable=False, server_default=sa.text('0')),
+        sa.Column("post_visibility", sa.SmallInteger, nullable=False, server_default=sa.text('0')),
+        *timestamps()
+    )
+    op.execute(
+        """
+        CREATE TRIGGER update_posts_modtime
+            BEFORE UPDATE
+            ON posts
+            FOR EACH ROW
+        EXECUTE PROCEDURE update_updated_at_column();
+        """
+    )
+
+
     op.execute(sa.text("""CREATE SEQUENCE IF NOT EXISTS public.media_id_seq
     INCREMENT 1
     START 1
@@ -38,9 +69,13 @@ def upgrade() -> None:
         sa.Column("media_type", sa.SmallInteger),
         sa.Column("file_path", sa.VARCHAR(512), nullable=False),
         sa.Column("user_id", sa.BigInteger, sa.ForeignKey("users.id", ondelete="CASCADE")),
+        sa.Column("post_id", sa.BigInteger, sa.ForeignKey("posts.id", ondelete="CASCADE")),
         timestamps()[0],
     )
 
 def downgrade() -> None:
     op.execute("""DROP SEQUENCE if exists public.media_id_sec;""")
     op.execute("drop table if exists media;")
+    op.execute("""DROP SEQUENCE if exists public.posts_id_seq;""")
+    op.execute("drop table if exists posts;")
+
