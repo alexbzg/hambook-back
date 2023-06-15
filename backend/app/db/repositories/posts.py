@@ -57,7 +57,8 @@ class PostsRepository(BaseRepository):
         requesting_user: UserInDB) -> PostInDB:
 
         created_post = await self.db.fetch_one(query=CREATE_POST_QUERY, 
-                values={**new_post.dict(), "user_id": int(requesting_user.id)})
+                values={**new_post.dict(exclude={"post_images", "deleted_images"}), 
+                    "user_id": int(requesting_user.id)})
 
         return PostInDB(**created_post)
 
