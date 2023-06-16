@@ -38,6 +38,14 @@ SET_MEDIA_POST_ID_QUERY = """
     WHERE id = :media_id;
 """
 
+GET_MEDIA_BY_POST_ID_QUERY = """
+    SELECT id, media_type, file_path, user_id
+    FROM media
+    WHERE post_id = :post_id
+    ORDER BY id;
+"""
+
+
 def mediaPublicFromDB(media: MediaInDB) -> MediaPublic:
     return MediaPublic(**media.copy(
         exclude={'file_path'},
@@ -113,5 +121,13 @@ class MediaRepository(BaseRepository):
         await self.db.execute(query=SET_MEDIA_POST_ID_QUERY, 
                 values={'media_id': media_id, 'post_id': post_id})
    
+    async def get_media_by_post_id(self, *, post_id: int) -> List[MediaInDB]:
+        media_records = await self.db.fetch_all(query=GET_MEDIA_BY_POST_ID_QUERY, 
+                values={"post_id": post_id})
+
+        if not media_records:
+            return None
+
+        return [mediaPublicFromDB(MediaInDB(**media_record)) for media_record in media_records]
 
 

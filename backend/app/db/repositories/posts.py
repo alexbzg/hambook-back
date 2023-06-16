@@ -1,7 +1,11 @@
 from typing import List
 
+from databases import Database
+
 from app.db.repositories.base import BaseRepository
-from app.models.post import PostBase, PostInDB, PostPublic, PostVisibility
+from app.db.repositories.media import MediaRepository
+
+from app.models.post import PostUpdate, PostInDB, PostPublic, PostVisibility
 from app.models.user import UserInDB
 
 CREATE_POST_QUERY = """
@@ -52,8 +56,13 @@ GET_POST_BY_ID_QUERY = """
 
 class PostsRepository(BaseRepository):
 
+    def __init__(self, db: Database) -> None:
+        super().__init__(db)
+        self.media_repo = MediaRepository(db)
+
+
     async def create_post(self, *, 
-        new_post: PostBase,
+        new_post: PostUpdate,
         requesting_user: UserInDB) -> PostInDB:
 
         created_post = await self.db.fetch_one(query=CREATE_POST_QUERY, 
@@ -90,16 +99,15 @@ class PostsRepository(BaseRepository):
         if not post:
             return None
 
-        return PostInDB(**post)
+        return PostInDB(**post, images=await self.media_repo.get_media_by_post_id(post_id=id))
 
-
-    async def update_post(self, *, post: PostInDB, post_update: PostBase) -> PostInDB:
+    async def update_post(self, *, post: PostInDB, post_update: PostUpdate) -> PostInDB:
 
         update_params = post.copy(update=post_update.dict(exclude_unset=True))
         updated_post = await self.db.fetch_one(
             query=UPDATE_POST_QUERY,
             values=update_params.dict(
-                exclude={"user_id", "created_at", "updated_at"}),
+                exclude={"user_id", "created_at", "updated_at", "post_images", "deleted_images", "images"}),
         )
 
         return PostInDB(**updated_post)

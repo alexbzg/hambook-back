@@ -10,19 +10,33 @@ from app.api.dependencies.auth import get_current_active_user, get_current_optio
 from app.api.dependencies.database import get_repository
 from app.api.dependencies.posts import get_post_for_update, get_post_for_view, get_visibility_level
 from app.api.dependencies.media import get_media_for_update
-from app.models.post import PostBase, PostCreate, PostInDB, PostPublic, PostVisibility, PostType
+from app.models.post import PostBase, PostUpdate, PostInDB, PostPublic, PostVisibility, PostType
 from app.models.user import UserInDB
 from app.db.repositories.posts import PostsRepository
 from app.db.repositories.media import MediaRepository
 
 router = APIRouter()
 
+async def update_post_images(*,
+    post_update: PostUpdate,
+    post_id: int,
+    current_user: UserInDB,
+    media_repo: MediaRepository) -> None:
+
+    for media_id in post_update.post_images:
+        media = await get_media_for_update(media_id, current_user, media_repo)
+        await media_repo.set_media_post_id(media_id=media.id, post_id=post_id)
+
+    for media_id in post_update.deleted_images:
+        media = await get_media_for_update(media_id, current_user, media_repo)
+        await media_repo.delete_media(id=media.id)
+
 @router.post("/", response_model=PostPublic, name="posts:create-post")
 async def create_post(*,
-    new_post: PostCreate = Body(..., embed=True),
+    new_post: PostUpdate = Body(..., embed=True),
 	current_user: UserInDB = Depends(get_current_active_user),
 	posts_repo: PostsRepository = Depends(get_repository(PostsRepository)),    
-	media_repo: MediaRepository = Depends(get_repository(MediaRepository)),    
+    media_repo: MediaRepository = Depends(get_repository(MediaRepository)),
 ) -> PostPublic:
 
     if not current_user.is_admin and new_post.post_type == PostType.site:
@@ -32,14 +46,8 @@ async def create_post(*,
         )
 
     created_post = await posts_repo.create_post(new_post=new_post, requesting_user=current_user)
-
-    for media_id in new_post.post_images:
-        media = await get_media_for_update(media_id, current_user, media_repo)
-        await media_repo.set_media_post_id(media_id=media.id, post_id=created_post.id)
-
-    for media_id in new_post.deleted_images:
-        media = await get_media_for_update(media_id, current_user, media_repo)
-        await media_repo.delete_media(id=media.id)
+    await update_post_images(post_update=new_post, post_id=created_post.id, 
+            current_user=current_user, media_repo=media_repo)
 
     return PostPublic(**created_post.dict())
 
@@ -57,13 +65,16 @@ async def delete_post(*,
 
 @router.put("/{post_id}", response_model=PostPublic, name="posts:update-post")
 async def update_post(*,
-    post_update: PostBase = Body(..., embed=True),
+    post_update: PostUpdate = Body(..., embed=True),
 	current_user: UserInDB = Depends(get_current_active_user),
 	posts_repo: PostsRepository = Depends(get_repository(PostsRepository)),    
+    media_repo: MediaRepository = Depends(get_repository(MediaRepository)),
     post: PostInDB = Depends(get_post_for_update)
 ) -> PostPublic:
 
     updated_post = await posts_repo.update_post(post=post, post_update=post_update)
+    await update_post_images(post_update=post_update, post_id=post.id, 
+            current_user=current_user, media_repo=media_repo)
 
     return PostPublic(**updated_post.dict())
 
